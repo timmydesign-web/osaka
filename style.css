@@ -5,7 +5,6 @@
 :root {
     --ios-blue: #0071e3;
     --c1: #ff9a9e; --c2: #fad0c4; --c3: #a1c4fd;
-    /* 這裡定義標題專屬的字體堆疊，優先呼叫手機或電腦內建的花園明朝體 */
     --title-font: 'HanaMinA', 'HanaMinB', 'Hanazono Mincho', '花園明朝A', '花園明朝B', 'Noto Serif JP', serif;
 }
 
@@ -26,7 +25,6 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- 關鍵修正：強制所有標題 (h1~h6) 與 .serif 類別使用花園明朝體 --- */
 h1, h2, h3, h4, h5, h6, .serif {
     font-family: var(--title-font) !important;
 }
@@ -36,18 +34,14 @@ header {
     padding-top: max(20px, env(safe-area-inset-top)); 
     padding-bottom: 15px; text-align: center; position: sticky; top: 0; z-index: 100;
 }
-/* 字體已由上方的全域設定接管，這裡只需處理大小與邊距 */
 header h1 { margin: 0; font-size: 24px; }
-/* 副標題維持現代無襯線體，確保易讀性 */
 .subtitle { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Noto Sans TC", sans-serif !important; font-size: 13px; color: #424245; font-weight: 600; margin-top: 5px; }
 
 .nav-container, .weather-widget, .hero-card, .modal-content {
     width: 90% !important; max-width: 400px !important; margin: 0 auto 20px auto !important;
 }
 
-.weather-widget, .hero {
-    animation: fadeUp 0.8s ease-out forwards;
-}
+.weather-widget, .hero { animation: fadeUp 0.8s ease-out forwards; }
 
 .nav-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px !important; }
 .nav-btn {
@@ -104,36 +98,30 @@ header h1 { margin: 0; font-size: 24px; }
 .modal.open .modal-content { transform: scale(1); opacity: 1; transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s; }
 
 .close-btn { 
-    position: absolute; 
-    right: 15px; 
-    top: 15px; 
-    width: 34px; 
-    height: 34px; 
-    background: #ffffff; 
-    border-radius: 50%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 22px; 
-    font-weight: 400;
-    line-height: 1; 
-    padding-bottom: 2px; 
-    cursor: pointer; 
-    color: #86868b; 
-    z-index: 9999; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: absolute; right: 15px; top: 15px; width: 34px; height: 34px; 
+    background: #ffffff; border-radius: 50%; display: flex; align-items: center; 
+    justify-content: center; font-size: 22px; font-weight: 400; line-height: 1; 
+    padding-bottom: 2px; cursor: pointer; color: #86868b; z-index: 9999; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.close-btn:hover { 
-    transform: scale(1.05); 
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); 
-}
+.close-btn:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
 
 .itinerary-card { background: #fff; border-radius: 18px; padding: 18px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-.time-item { display: flex; margin-bottom: 12px; font-size: 14px; font-weight: 500; }
-.time-item .time { width: 55px; font-weight: 700; color: var(--ios-blue); }
-.time-item.highlight { background: rgba(0, 113, 227, 0.06); padding: 10px; border-radius: 12px; }
+
+/* --- 修正點：行程條目排版更新，支援多行文字 --- */
+.time-item { display: flex; align-items: flex-start; margin-bottom: 15px; font-size: 14px; }
+.time-item .time { width: 55px; font-weight: 700; color: var(--ios-blue); padding-top: 1px; }
+.time-item.highlight { background: rgba(0, 113, 227, 0.06); padding: 12px; border-radius: 12px; margin-left: -12px; margin-right: -12px; }
+
+/* 交通細節排版 */
+.item-content { display: flex; flex-direction: column; flex: 1; }
+.item-title { font-weight: 600; color: #1d1d1f; }
+.transit-detail { font-size: 11px; color: #86868b; margin-top: 5px; font-weight: 500; display: flex; align-items: center; }
+
 .glass-btn { display: flex; justify-content: center; align-items: center; background: #fff; padding: 14px; border-radius: 18px; text-decoration: none; color: #1d1d1f; font-weight: 600; margin: 10px 0; border: 1px solid rgba(0,0,0,0.05); }
 .glass-btn.taxi { background: #fffbef !important; border-color: #fce48b !important; color: #b08500 !important; }
+
+/* 新增：累了想回家 按鈕專屬樣式 */
+.glass-btn.home-btn { background: #f2f2f7 !important; border-color: #e5e5ea !important; color: #1d1d1f !important; margin-top: 20px; }
 
 footer { text-align: center; padding: 30px 0 max(30px, env(safe-area-inset-bottom)) 0; color: #424245; font-size: 11px; font-weight: 500; }
