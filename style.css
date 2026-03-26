@@ -63,7 +63,6 @@ main { padding-top: 20px; }
 .weather-left .weather-subtitle { font-size: 12px; color: #86868b; font-weight: 500; }
 .weather-right { text-align: right; }
 .weather-right h3 { margin: 0; font-size: 15px; font-family: 'HanaMin', 'Noto Serif JP', serif; color: #1d1d1f; }
-.weather-right .weather-provider { font-size: 11px; color: #a1a1a6; }
 
 .hourly-forecast { display: flex; overflow-x: auto; gap: 20px; padding-bottom: 5px; }
 .hourly-forecast::-webkit-scrollbar { display: none; }
@@ -83,19 +82,28 @@ main { padding-top: 20px; }
 .hero-card h2 { margin-top: 0; color: #1d1d1f; }
 .hero-card p { color: #424245; margin-bottom: 0; line-height: 1.6; font-weight: 500; }
 
+/* =========================================
+   更新：支援吸附彈出動畫的 Modal
+   ========================================= */
 .modal {
     display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-    opacity: 0; transition: opacity 0.4s ease;
+    opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
 }
-.modal.open { display: flex !important; justify-content: center; align-items: center; opacity: 1; }
+.modal.open { opacity: 1; pointer-events: auto; display: flex !important; justify-content: center; align-items: center; }
 
 .modal-content {
     background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(40px) saturate(180%); -webkit-backdrop-filter: blur(40px) saturate(180%);
     padding: 30px; width: 88%; max-width: 450px; border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 30px 60px rgba(0,0,0,0.15); transform: scale(0.85); transition: transform 0.5s cubic-bezier(0.15, 1, 0.3, 1.1); position: relative;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.15); 
+    
+    /* 動畫關鍵：初始狀態縮小為 0.1，關閉時會縮回 */
+    transform: scale(0.1); opacity: 0;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+    position: relative;
 }
-.modal.open .modal-content { transform: scale(1); }
+.modal.open .modal-content { transform: scale(1); opacity: 1; }
+
 .close-btn { position: absolute; right: 20px; top: 15px; font-size: 26px; cursor: pointer; color: rgba(0,0,0,0.3); transition: 0.2s;}
 .close-btn:hover { color: #000; }
 
