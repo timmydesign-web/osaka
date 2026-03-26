@@ -92,7 +92,11 @@ function updateItineraryPreview() {
     const items = Array.from(daySection.querySelectorAll('.time-item'));
     const itinerary = items.map(el => {
         const [h, m] = el.getAttribute('data-time').split(':').map(Number);
-        return { time: el.getAttribute('data-time'), score: h * 60 + m, title: el.querySelector('span:last-child').innerText };
+        // 修正點：優先抓取主標題 (.item-title)，避免把交通資訊也顯示在看板上
+        const titleEl = el.querySelector('.item-title');
+        const itemTitle = titleEl ? titleEl.innerText : el.querySelector('span:last-child').innerText;
+        
+        return { time: el.getAttribute('data-time'), score: h * 60 + m, title: itemTitle };
     });
 
     let currentIdx = itinerary.findLastIndex(item => currentScore >= item.score);
