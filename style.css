@@ -30,6 +30,19 @@ header {
 }
 .nav-btn:hover { background: var(--ios-blue); color: white; transform: translateY(-2px); }
 
+/* --- 這裡補回被我不小心刪掉的首頁方框樣式 --- */
+.hero { padding: 80px 20px; text-align: center; }
+.hero-card { 
+    background: white; 
+    max-width: 400px; 
+    margin: 0 auto; 
+    padding: 35px; 
+    border-radius: 25px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+}
+.hero-card h2 { margin-top: 0; }
+/* ------------------------------------------ */
+
 .modal {
     display: none; position: fixed; z-index: 1000; left: 0; top: 0;
     width: 100%; height: 100%;
