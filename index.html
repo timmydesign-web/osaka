@@ -33,7 +33,7 @@
 
         <div id="itineraryModal" class="modal" style="display: none;">
             <div class="modal-content">
-                <span class="close-btn" onclick="closeModal()">&times;</span>
+                <span class="close-btn" onclick="closeModal()">×</span>
                 <div id="modalBody"></div>
             </div>
         </div>
@@ -63,20 +63,25 @@
                         <span class="event">抵達「南海難波站」</span>
                     </div>
                     <div class="time-item">
-                        <span class="time">21:35</span>
+                        <span class="time">21:30</span>
                         <span class="event">入住 ESLEAD hotel namba east</span>
                     </div>
                 </div>
 
                 <div class="transport-section">
-                    <h3>📍 抵達飯店方式</h3>
-                    <a href="https://www.google.com/maps/dir/?api=1&destination=ESLEAD+hotel+namba+east" target="_blank" class="glass-btn">
+                    <h3>📍 目的地導航</h3>
+                    <a href="https://www.google.com/maps/dir/?api=1&destination=4+Chome-1-11+Nipponbashi,+Naniwa+Ward,+Osaka,+556-0005" target="_blank" class="glass-btn">
                         <span class="icon">🚶</span> Google Map 步行導航
                     </a>
-                    <a href="https://go.goinc.jp/" target="_blank" class="glass-btn taxi">
-                        <span class="icon">🚕</span> 開啟 GO Taxi APP
+                    
+                    <a href="go-app://action?address=4-1-11%20Nipponbashi,%20Naniwa%20Ward,%20Osaka" class="glass-btn taxi">
+                        <span class="icon">🚕</span> 喚起 GO Taxi APP
                     </a>
-                    <p class="address-text">地址：大阪市中央区瓦屋町2-18-10</p>
+
+                    <div class="copy-box">
+                        <input type="text" value="大阪市浪速区日本橋4-1-11" id="hotelAddr" readonly>
+                        <button onclick="copyAddress()">複製日文地址</button>
+                    </div>
                 </div>
             </div>
 
@@ -91,7 +96,7 @@
     </main>
 
     <footer>
-        <p>&copy; 2026 Kansai Adventure | iOS 26 Visuals</p>
+        <p>© 2026 Kansai Adventure | iOS 26 Visuals</p>
     </footer>
 
     <script src="script.js"></script>
