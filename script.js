@@ -1,45 +1,58 @@
+/**
+ * 開啟行程模態視窗
+ * @param {string} dayId - 對應資料庫的 ID (例如 'day1')
+ */
 function openModal(dayId) {
     const modal = document.getElementById('itineraryModal');
     const modalBody = document.getElementById('modalBody');
-    const content = document.getElementById('content-' + dayId);
+    const sourceContent = document.getElementById('content-' + dayId);
     
-    if (modal && content) {
-        modalBody.innerHTML = content.innerHTML;
+    if (modal && sourceContent) {
+        // 複製內容到 Modal
+        modalBody.innerHTML = sourceContent.innerHTML;
         
-        // 1. 先顯示結構
+        // 顯示結構並觸發動畫
         modal.style.display = 'flex';
-        
-        // 2. 稍微延遲一點點再加 class，觸發 CSS transition 動畫
         setTimeout(() => {
             modal.classList.add('open');
-        }, 10);
+        }, 15);
         
+        // 禁止背景滾動
         document.body.style.overflow = 'hidden';
     } else {
-        console.error("找不到對應的行程 ID: " + dayId);
+        console.error("找不到 ID: content-" + dayId);
     }
 }
 
+/**
+ * 關閉行程模態視窗
+ */
 function closeModal() {
     const modal = document.getElementById('itineraryModal');
     if (modal) {
         modal.classList.remove('open');
         
-        // 等動畫跑完 (0.4s) 再隱藏 display
+        // 等待 CSS 動畫結束後隱藏結構
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
                 modal.style.display = 'none';
             }
         }, 400);
         
+        // 恢復背景滾動
         document.body.style.overflow = '';
     }
 }
 
-// 點擊背景關閉
+// 點擊 Modal 背景區域自動關閉
 window.onclick = function(event) {
     const modal = document.getElementById('itineraryModal');
     if (event.target === modal) {
         closeModal();
     }
-}
+};
+
+// 支援 ESC 鍵快速關閉
+document.addEventListener('keydown', (e) => {
+    if (e.key === "Escape") closeModal();
+});
