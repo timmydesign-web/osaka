@@ -1,5 +1,5 @@
 {
-  "name": "大阪京都之旅",
+  "name": "大阪京都旅行",
   "short_name": "關西行",
   "start_url": "./index.html",
   "display": "standalone",
@@ -7,14 +7,14 @@
   "theme_color": "#0071e3",
   "icons": [
     {
-      "src": "icon.png",
+      "src": "icon.png.jpg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "icon.png",
+      "src": "icon.png.jpg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     }
   ]
 }
