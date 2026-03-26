@@ -1,12 +1,26 @@
-function openModal(dayId) {
+// 動態獲取按鈕位置，創造吸附特效
+function openModal(dayId, event) {
     const modal = document.getElementById('itineraryModal');
+    const modalContent = document.querySelector('.modal-content');
     const modalBody = document.getElementById('modalBody');
     const sourceContent = document.getElementById('content-' + dayId);
     
-    if (modal && sourceContent) {
+    if (modal && sourceContent && event) {
+        // 抓取按鈕在畫面上的中心座標
+        const btnRect = event.currentTarget.getBoundingClientRect();
+        const originX = btnRect.left + (btnRect.width / 2);
+        const originY = btnRect.top + (btnRect.height / 2);
+        
+        // 設定彈出視窗的變形起點為按鈕中心
+        modalContent.style.transformOrigin = `${originX}px ${originY}px`;
+        
         modalBody.innerHTML = sourceContent.innerHTML;
         modal.style.display = 'flex';
-        setTimeout(() => { modal.classList.add('open'); }, 15);
+        
+        // 強制瀏覽器重繪以觸發動畫
+        void modal.offsetWidth; 
+        
+        modal.classList.add('open');
         document.body.style.overflow = 'hidden';
     }
 }
@@ -45,17 +59,15 @@ function getWeatherEmoji(code) {
     return "🌤️";
 }
 
-// 強化版：抓取 24 小時天氣 (加入超時保護機制)
+// 抓取 24 小時天氣 (精準對齊現在時刻)
 async function fetchWeather() {
     const hourlyContainer = document.getElementById('hourly-forecast');
     const titleDesc = document.getElementById('current-weather-desc');
     if (!hourlyContainer) return;
 
     try {
-        // 設定 5 秒超時，避免無限轉圈圈
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
-
         const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=34.6937&longitude=135.5022&current_weather=true&hourly=temperature_2m,weathercode&timezone=Asia%2FTokyo&forecast_days=2', { signal: controller.signal });
         clearTimeout(timeoutId);
 
@@ -66,10 +78,27 @@ async function fetchWeather() {
         const currentTemp = Math.round(data.current_weather.temperature);
         titleDesc.innerHTML = `${getWeatherEmoji(currentCode)} 目前 ${currentTemp}°C`;
 
-        const currentHourStr = data.current_weather.time;
+        // 取得現在時間的 Epoch 毫秒數
+        const currentEpoch = new Date().getTime();
         const hourlyTimes = data.hourly.time;
-        let startIndex = hourlyTimes.findIndex(t => t === currentHourStr);
-        if (startIndex === -1) startIndex = 0;
+        
+        // 尋找陣列中最接近「現在時刻」的小時索引
+        let startIndex = 0;
+        let minDiff = Infinity;
+        for (let i = 0; i < hourlyTimes.length; i++) {
+            // 強制加上 +09:00 確保轉換為日本時區進行比對
+            const tEpoch = new Date(hourlyTimes[i] + "+09:00").getTime();
+            const diff = Math.abs(tEpoch - currentEpoch);
+            if (diff < minDiff) {
+                minDiff = diff;
+                startIndex = i;
+            }
+        }
+
+        // 防呆機制：確保剩下的資料夠 24 小時
+        if (startIndex + 24 > hourlyTimes.length) {
+            startIndex = Math.max(0, hourlyTimes.length - 24);
+        }
 
         let hourlyHTML = '';
         for (let i = startIndex; i < startIndex + 24; i++) {
