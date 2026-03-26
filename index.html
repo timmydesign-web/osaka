@@ -1,38 +1,40 @@
-html_content = '''
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大阪京都之旅</title>
+    <title>關西之行：大阪與京都</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>大阪京都之旅</h1>
+        <div class="header-content">
+            <h1>🌸 大阪京都之旅</h1>
+            <p>2026.08.10 - 08.17 關西全攻略</p>
+        </div>
         <nav>
             <ul>
-                <li><a href="#home">首頁</a></li>
-                <li><button class="nav-btn" onclick="openModal('day1')">第一天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day2')">第二天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day3')">第三天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day4')">第四天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day5')">第五天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day6')">第六天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day7')">第七天</button></li>
-                <li><button class="nav-btn" onclick="openModal('day8')">第八天</button></li>
+                <li><button class="nav-btn" onclick="openModal('day1')">Day 1</button></li>
+                <li><button class="nav-btn" onclick="openModal('day2')">Day 2</button></li>
+                <li><button class="nav-btn" onclick="openModal('day3')">Day 3</button></li>
+                <li><button class="nav-btn" onclick="openModal('day4')">Day 4</button></li>
+                <li><button class="nav-btn" onclick="openModal('day5')">Day 5</button></li>
+                <li><button class="nav-btn" onclick="openModal('day6')">Day 6</button></li>
+                <li><button class="nav-btn" onclick="openModal('day7')">Day 7</button></li>
+                <li><button class="nav-btn" onclick="openModal('day8')">Day 8</button></li>
             </ul>
         </nav>
     </header>
 
     <main>
         <section id="home" class="hero">
-            <h2>歡迎來到關西！</h2>
-            <p>一起探索大阪的熱情與京都的古韻。</p>
-            <p>點擊上方選單查看每日詳細行程</p>
+            <div class="hero-card">
+                <h2>歡迎來到關西！</h2>
+                <p>準備好體驗大阪的熱情奔放與京都的靜謐優雅了嗎？</p>
+                <div class="status-badge">預計 8 月出發</div>
+            </div>
         </section>
 
-        <!-- 彈出視窗結構 -->
         <div id="itineraryModal" class="modal">
             <div class="modal-content">
                 <span class="close-btn" onclick="closeModal()">&times;</span>
@@ -40,54 +42,26 @@ html_content = '''
             </div>
         </div>
 
-        <!-- 隱藏的行程資料來源 -->
         <div id="data-source" style="display:none;">
             <div id="content-day1">
-                <h2>第一天：8月10日 (週六) - 大阪</h2>
-                <h3>上午：抵達關西機場</h3>
-                <p>搭乘南海電鐵前往市區，入住飯店。</p>
-                <h3>下午：道頓堀、心齋橋</h3>
-                <p>感受大阪熱鬧氛圍，品嚐章魚燒。</p>
+                <h2>🗓️ 第一天：大阪抵達</h2>
+                <ul class="itinerary-list">
+                    <li><strong>上午：</strong> 抵達關西機場 (KIX)，搭乘南海電鐵。</li>
+                    <li><strong>下午：</strong> 飯店 Check-in，前往心齋橋。</li>
+                    <li><strong>晚餐：</strong> 道頓堀章魚燒、拉麵巡禮。</li>
+                </ul>
             </div>
             <div id="content-day2">
-                <h2>第二天：8月11日 (週日) - 環球影城</h2>
-                <p>全日於日本環球影城 (USJ) 盡情遊玩。</p>
+                <h2>🎢 第二天：環球影城</h2>
+                <p>全日攻略日本環球影城 (USJ)，瑪利歐、哈利波特園區重點必去！</p>
             </div>
-            <div id="content-day3">
-                <h2>第三天：8月12日 (週一) - 大阪歷史</h2>
-                <p>參觀大阪城天守閣、新世界通天閣。</p>
             </div>
-            <div id="content-day4">
-                <h2>第四天：8月13日 (週二) - 前往京都</h2>
-                <p>金閣寺、龍安寺，晚上漫步祇園。</p>
-            </div>
-            <div id="content-day5">
-                <h2>第五天：8月14日 (週三) - 嵐山之旅</h2>
-                <p>渡月橋、竹林小徑、天龍寺。</p>
-            </div>
-            <div id="content-day6">
-                <h2>第六天：8月15日 (週四) - 京都經典</h2>
-                <p>伏見稻荷大社、清水寺、二年坂。</p>
-            </div>
-            <div id="content-day7">
-                <h2>第七天：8月16日 (週五) - 奈良一日遊</h2>
-                <p>東大寺看大佛，在奈良公園餵小鹿。</p>
-            </div>
-            <div id="content-day8">
-                <h2>第八天：8月17日 (週六) - 返程</h2>
-                <p>京都車站採買伴手禮，搭乘 HARUKA 前往機場。</p>
-            </div>
-        </div>
     </main>
 
     <footer>
-        <p>&copy; 2023 大阪京都之旅. All rights reserved.</p>
+        <p>&copy; 2026 關西旅程札記 | 祝旅途愉快</p>
     </footer>
 
     <script src="script.js"></script>
 </body>
 </html>
-'''
-with open('index.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-print("index.html 已更新彈出視窗結構！")
