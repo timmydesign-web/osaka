@@ -3,11 +3,9 @@
 :root {
     --ios-blue: #0071e3;
     --glass-white: rgba(255, 255, 255, 0.35);
-    /* 流體漸層配色 */
     --c1: #ff9a9e; --c2: #fad0c4; --c3: #a1c4fd;
 }
 
-/* 將流體動畫設定為全域背景 */
 body { 
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Noto Sans TC", sans-serif;
     margin: 0; color: #1d1d1f;
@@ -16,8 +14,8 @@ body {
                 linear-gradient(127deg, var(--c2), rgba(0,255,0,0) 70.71%),
                 linear-gradient(336deg, var(--c3), rgba(0,0,255,0) 70.71%);
     background-size: 200% 200%;
-    animation: liquidBg 15s ease infinite; /* 放慢動畫速度，更顯優雅 */
-    background-attachment: fixed; /* 確保滾動時背景不會斷層 */
+    animation: liquidBg 15s ease infinite; 
+    background-attachment: fixed; 
     min-height: 100vh;
 }
 
@@ -30,21 +28,30 @@ body {
 header { 
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-    padding: 15px; text-align: center; position: sticky; top: 0; z-index: 100;
+    padding: 15px 10px; text-align: center; position: sticky; top: 0; z-index: 100;
     border-bottom: 1px solid rgba(255,255,255,0.3);
 }
 
-.nav-container { display: flex; overflow-x: auto; gap: 10px; justify-content: center; padding: 10px 5px; }
-.nav-container::-webkit-scrollbar { display: none; }
+/* 導覽列：改為 4x2 網格排版 */
+.nav-container { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); /* 強制均分為 4 欄 */
+    gap: 8px; /* 按鈕之間的間距 */
+    justify-content: center; 
+    max-width: 400px; /* 限制最大寬度，電腦版才不會太寬 */
+    margin: 10px auto 0 auto; 
+}
 
 .nav-btn {
-    background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(255,255,255,0.5); padding: 8px 18px;
-    border-radius: 20px; cursor: pointer; transition: 0.3s;
-    font-weight: 500; font-size: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(255,255,255,0.5); 
+    padding: 10px 0; /* 取消左右內距，由 grid 自動分配寬度 */
+    border-radius: 16px; cursor: pointer; transition: 0.3s;
+    font-weight: 600; font-size: 13px; /* 微調字體大小以適應手機螢幕 */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    width: 100%;
 }
 .nav-btn:hover { background: var(--ios-blue); color: white; transform: translateY(-2px); border-color: var(--ios-blue); }
 
-/* 首頁方框：改為毛玻璃材質，與彈出視窗一致 */
 .hero { 
     display: flex; justify-content: center; align-items: center;
     padding: 80px 20px; text-align: center; 
@@ -63,12 +70,11 @@ header {
 .hero-card h2 { margin-top: 0; color: #1d1d1f; }
 .hero-card p { color: #424245; margin-bottom: 0; line-height: 1.6; font-weight: 500; }
 
-/* 彈出視窗遮罩：改為微微調暗的景深效果 */
 .modal {
     display: none; position: fixed; z-index: 1000; left: 0; top: 0;
     width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.25); /* 黑色半透明遮罩 */
-    backdrop-filter: blur(5px); /* 輕微景深模糊 */
+    background: rgba(0, 0, 0, 0.25); 
+    backdrop-filter: blur(5px); 
     -webkit-backdrop-filter: blur(5px);
     opacity: 0; transition: opacity 0.4s ease;
 }
