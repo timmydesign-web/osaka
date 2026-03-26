@@ -1,4 +1,4 @@
-// 動態獲取按鈕位置，創造吸附特效
+// 動態獲取按鈕位置，創造精準的吸附與彈跳特效
 function openModal(dayId, event) {
     const modal = document.getElementById('itineraryModal');
     const modalContent = document.querySelector('.modal-content');
@@ -6,18 +6,23 @@ function openModal(dayId, event) {
     const sourceContent = document.getElementById('content-' + dayId);
     
     if (modal && sourceContent && event) {
-        // 抓取按鈕在畫面上的中心座標
-        const btnRect = event.currentTarget.getBoundingClientRect();
-        const originX = btnRect.left + (btnRect.width / 2);
-        const originY = btnRect.top + (btnRect.height / 2);
-        
-        // 設定彈出視窗的變形起點為按鈕中心
-        modalContent.style.transformOrigin = `${originX}px ${originY}px`;
-        
         modalBody.innerHTML = sourceContent.innerHTML;
+        
+        // 先顯示彈出視窗 (此時 opacity 為 0)，這樣才能抓到視窗的真實尺寸
         modal.style.display = 'flex';
         
-        // 強制瀏覽器重繪以觸發動畫
+        // 抓取按鈕與白色視窗在螢幕上的位置
+        const btnRect = event.currentTarget.getBoundingClientRect();
+        const contentRect = modalContent.getBoundingClientRect();
+        
+        // 計算原點 (必須是相對於白色視窗本身的內部座標)
+        const originX = btnRect.left + (btnRect.width / 2) - contentRect.left;
+        const originY = btnRect.top + (btnRect.height / 2) - contentRect.top;
+        
+        // 設定彈跳變形的起點為那顆按鈕的中心
+        modalContent.style.transformOrigin = `${originX}px ${originY}px`;
+        
+        // 強制瀏覽器重繪以觸發流暢動畫
         void modal.offsetWidth; 
         
         modal.classList.add('open');
@@ -33,7 +38,7 @@ function closeModal() {
             if (!modal.classList.contains('open')) {
                 modal.style.display = 'none';
             }
-        }, 400);
+        }, 400); // 等待吸附動畫完成再隱藏
         document.body.style.overflow = '';
     }
 }
@@ -59,7 +64,7 @@ function getWeatherEmoji(code) {
     return "🌤️";
 }
 
-// 抓取 24 小時天氣 (精準對齊現在時刻)
+// 抓取 24 小時天氣 (修復 iOS 時間格式報錯問題)
 async function fetchWeather() {
     const hourlyContainer = document.getElementById('hourly-forecast');
     const titleDesc = document.getElementById('current-weather-desc');
@@ -78,29 +83,15 @@ async function fetchWeather() {
         const currentTemp = Math.round(data.current_weather.temperature);
         titleDesc.innerHTML = `${getWeatherEmoji(currentCode)} 目前 ${currentTemp}°C`;
 
-        // 取得現在時間的 Epoch 毫秒數
-        const currentEpoch = new Date().getTime();
+        // 完美解法：直接拿 API 的現在時間字串去陣列裡面找，完全避開 iOS 的時區轉換地雷
+        const currentHourStr = data.current_weather.time; // 例如 "2026-03-26T17:00"
         const hourlyTimes = data.hourly.time;
         
-        // 尋找陣列中最接近「現在時刻」的小時索引
-        let startIndex = 0;
-        let minDiff = Infinity;
-        for (let i = 0; i < hourlyTimes.length; i++) {
-            // 強制加上 +09:00 確保轉換為日本時區進行比對
-            const tEpoch = new Date(hourlyTimes[i] + "+09:00").getTime();
-            const diff = Math.abs(tEpoch - currentEpoch);
-            if (diff < minDiff) {
-                minDiff = diff;
-                startIndex = i;
-            }
-        }
-
-        // 防呆機制：確保剩下的資料夠 24 小時
-        if (startIndex + 24 > hourlyTimes.length) {
-            startIndex = Math.max(0, hourlyTimes.length - 24);
-        }
+        let startIndex = hourlyTimes.findIndex(t => t === currentHourStr);
+        if (startIndex === -1) startIndex = 0; // 防呆
 
         let hourlyHTML = '';
+        // 從當下時間開始往後排 24 個小時
         for (let i = startIndex; i < startIndex + 24; i++) {
             const timeStr = hourlyTimes[i].substring(11, 16); 
             const temp = Math.round(data.hourly.temperature_2m[i]);
