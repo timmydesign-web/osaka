@@ -4,7 +4,6 @@
     --ios-bg: #f5f5f7;
     --ios-blue: #0071e3;
     --glass-white: rgba(255, 255, 255, 0.25);
-    /* 流體玻璃背景色 */
     --c1: #ff9a9e; --c2: #fad0c4; --c3: #a1c4fd;
 }
 
@@ -26,18 +25,17 @@ header {
 
 .nav-btn {
     background: white; border: 1px solid rgba(0,0,0,0.08); padding: 8px 18px;
-    border-radius: 20px; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 20px; cursor: pointer; transition: 0.3s;
     font-weight: 500; font-size: 14px;
 }
 .nav-btn:hover { background: var(--ios-blue); color: white; transform: translateY(-2px); }
 
-/* iOS 26 Liquid Glass Modal */
 .modal {
     display: none; position: fixed; z-index: 1000; left: 0; top: 0;
     width: 100%; height: 100%;
-    background: linear-gradient(217deg, var(--c1), rgba(255,0,0,0) 70%),
-                linear-gradient(127deg, var(--c2), rgba(0,255,0,0) 70%),
-                linear-gradient(336deg, var(--c3), rgba(0,0,255,0) 70%);
+    background: linear-gradient(217deg, var(--c1), rgba(255,0,0,0) 70.71%),
+                linear-gradient(127deg, var(--c2), rgba(0,255,0,0) 70.71%),
+                linear-gradient(336deg, var(--c3), rgba(0,0,255,0) 70.71%);
     background-size: 200% 200%;
     animation: liquidBg 12s ease infinite;
     opacity: 0; transition: opacity 0.4s ease;
@@ -59,15 +57,12 @@ header {
     border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 0 30px 60px rgba(0,0,0,0.12);
     transform: scale(0.85); transition: transform 0.5s cubic-bezier(0.15, 1, 0.3, 1.1);
+    position: relative;
 }
 
 .modal.open .modal-content { transform: scale(1); }
-
 .close-btn { position: absolute; right: 20px; top: 15px; font-size: 26px; cursor: pointer; color: rgba(0,0,0,0.2); }
 
-/* Day 1 內部元件樣式 */
-.ios-modal-header { margin-bottom: 20px; }
-.day-badge { background: var(--ios-blue); color: white; padding: 3px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; }
 .itinerary-card { background: rgba(255, 255, 255, 0.4); border-radius: 20px; padding: 15px; margin-bottom: 20px; }
 .time-item { display: flex; margin-bottom: 10px; font-size: 15px; }
 .time-item .time { width: 55px; font-weight: 700; color: var(--ios-blue); }
@@ -79,10 +74,11 @@ header {
     padding: 14px; margin: 8px 0; border-radius: 18px;
     text-decoration: none; color: #1d1d1f; font-weight: 600; transition: 0.2s;
 }
-.glass-btn:hover { background: rgba(255,255,255,0.8); transform: scale(1.02); }
 .glass-btn.taxi { background: rgba(255, 211, 0, 0.2); border-color: rgba(255, 211, 0, 0.3); }
 
-.address-text { font-size: 12px; color: #6e6e73; text-align: center; margin-top: 10px; }
-.hero { padding: 100px 20px; text-align: center; }
-.hero-card { background: white; max-width: 350px; margin: 0 auto; padding: 30px; border-radius: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
-footer { text-align: center; padding: 30px; color: #86868b; font-size: 13px; }
+/* 複製地址區域 */
+.copy-box { display: flex; gap: 5px; margin-top: 10px; }
+.copy-box input { flex: 1; border: none; background: rgba(0,0,0,0.05); padding: 8px; border-radius: 10px; font-size: 11px; }
+.copy-box button { background: var(--ios-blue); color: white; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 11px; }
+
+footer { text-align: center; padding: 30px; color: #86868b; }
