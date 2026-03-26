@@ -127,35 +127,72 @@ function init() {
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000);
 
-    // --- 🚀 新增：記帳本的觸控滑動切換邏輯 ---
+    // --- 🚀 修正點：記帳本 100% 黏手滑動切換邏輯 ---
     const toggleArea = document.querySelector('.payer-toggle');
-    let touchStartX = 0;
+    const slider = document.querySelector('.toggle-slider');
     
-    if (toggleArea) {
+    if (toggleArea && slider) {
+        let isDragging = false;
+        let startX = 0;
+        let currentTranslate = 0;
+        let maxTranslate = 0;
+        
         toggleArea.addEventListener('touchstart', e => {
-            touchStartX = e.changedTouches[0].screenX;
+            isDragging = true;
+            startX = e.changedTouches[0].clientX;
+            maxTranslate = slider.offsetWidth; // 滑塊的最大移動距離即為自己的寬度
+            const radioJJ = document.getElementById('payer-jj');
+            currentTranslate = radioJJ.checked ? maxTranslate : 0;
+            
+            // 暫停 CSS 動畫，讓滑塊完全跟隨手指無延遲
+            slider.style.transition = 'none';
         }, { passive: true });
         
-        toggleArea.addEventListener('touchend', e => {
-            let touchEndX = e.changedTouches[0].screenX;
-            let diff = touchEndX - touchStartX;
+        toggleArea.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            let currentX = e.changedTouches[0].clientX;
+            let diff = currentX - startX;
+            let newTranslate = currentTranslate + diff;
             
-            // 如果手指滑動距離超過 30px 就觸發切換
-            if (diff > 30) {
-                // 往右滑 -> ㄐㄐ付款
-                document.getElementById('payer-jj').checked = true;
-            } else if (diff < -30) {
-                // 往左滑 -> Timmy付款
-                document.getElementById('payer-timmy').checked = true;
+            // 限制滑塊不能跑出左右邊界
+            if (newTranslate < 0) newTranslate = 0;
+            if (newTranslate > maxTranslate) newTranslate = maxTranslate;
+            
+            // 100% 黏手：即時寫入 transform 改變方塊位置
+            slider.style.transform = `translateX(${newTranslate}px)`;
+            
+            // 防止手指橫向滑動時網頁跟著捲動
+            if (Math.abs(diff) > 5 && e.cancelable) {
+                e.preventDefault();
             }
-        }, { passive: true });
+        }, { passive: false });
+        
+        toggleArea.addEventListener('touchend', e => {
+            if (!isDragging) return;
+            isDragging = false;
+            let diff = e.changedTouches[0].clientX - startX;
+            
+            // 手指離開時，恢復 CSS 原本的動畫接管
+            slider.style.transition = '';
+            slider.style.transform = '';
+            
+            // 判斷滑動終點是否過半，決定吸附在哪一邊
+            if (Math.abs(diff) > 5) {
+                let finalTranslate = currentTranslate + diff;
+                if (finalTranslate > maxTranslate / 2) {
+                    document.getElementById('payer-jj').checked = true;
+                } else {
+                    document.getElementById('payer-timmy').checked = true;
+                }
+            }
+        });
     }
 }
 
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   💰 記帳本專用邏輯
+   💰 記帳本資料庫邏輯
 ========================================= */
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
@@ -219,18 +256,12 @@ function deleteExpense(id) {
 function renderExpenses() {
     const listContainer = document.getElementById('expense-list');
     listContainer.innerHTML = '';
-    
-    let timmyTotal = 0;
-    let jjTotal = 0;
-
+    let timmyTotal = 0; let jjTotal = 0;
     const reversedExpenses = [...expenses].reverse();
 
     reversedExpenses.forEach(exp => {
-        if (exp.payer === 'Timmy') {
-            timmyTotal += exp.amount;
-        } else {
-            jjTotal += exp.amount;
-        }
+        if (exp.payer === 'Timmy') { timmyTotal += exp.amount; } 
+        else { jjTotal += exp.amount; }
 
         const iconStr = exp.payer === 'Timmy' ? '👦🏻' : '👧🏻';
         const colorClass = exp.payer === 'Timmy' ? 'color-timmy' : 'color-jj';
