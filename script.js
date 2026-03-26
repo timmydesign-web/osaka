@@ -5,7 +5,6 @@ let currentActiveButton = null;
 const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec";
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
-// 視窗動畫定位點
 function setModalOrigin() {
     if (!currentActiveButton) return;
     const modalContent = document.querySelector('.modal-content');
@@ -32,7 +31,6 @@ function openModal(dayId, event) {
         void modal.offsetWidth; 
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        // 打開視窗後立刻觸發一次預覽更新，確保閃爍圓點正確
         updateItineraryPreview();
     }
 }
@@ -43,7 +41,6 @@ function openCurrentDayPreview(event) {
     const month = now.getMonth() + 1;
     const date = now.getDate();
     let dayNum = 1;
-    // 判定是否在 2026/8/10 ~ 8/17 區間
     if (year === 2026 && month === 8 && date >= 10 && date <= 17) {
         dayNum = date - 9; 
     }
@@ -119,18 +116,15 @@ function updateItineraryPreview() {
     const heroNextTime = document.getElementById('preview-next-time');
 
     const isTripTime = (year === 2026 && month === 8 && date >= 10 && date <= 17);
-    
-    // 清除所有閃爍點
     document.querySelectorAll('.time-item').forEach(el => el.classList.remove('active'));
 
     if (!isTripTime) {
-        // 尚未出發
         if (year < 2026 || (year === 2026 && (month < 8 || (month === 8 && date < 10)))) {
             if(heroNowTime) heroNowTime.innerText = "8/10";
             if(heroNowTitle) heroNowTitle.innerText = "期待出發";
             if(heroNextTitle) heroNextTitle.innerText = "大阪京都行";
             if(heroNextTime) heroNextTime.innerText = "Day 1";
-        } else { // 旅程結束
+        } else {
             if(heroNowTime) heroNowTime.innerText = "🏠";
             if(heroNowTitle) heroNowTitle.innerText = "旅途結束";
             if(heroNextTitle) heroNextTitle.innerText = "回憶滿滿";
@@ -139,7 +133,6 @@ function updateItineraryPreview() {
         return; 
     }
 
-    // 旅行中：執行追蹤與圓點閃爍
     const currentScore = now.getHours() * 60 + now.getMinutes();
     const currentDayNum = date - 9; 
     const dayDataId = `content-day${currentDayNum}`;
@@ -170,7 +163,6 @@ function updateItineraryPreview() {
         heroNextTitle.innerText = nextItem.title;
         heroNextTime.innerText = nextItem.time;
 
-        // 首頁圓點與視窗內圓點同步亮起
         const modal = document.getElementById('itineraryModal');
         const modalHeader = document.querySelector('#modalBody h2');
         if (modal.classList.contains('open') && modalHeader && modalHeader.innerText.includes(`Day ${currentDayNum}`)) {
@@ -181,10 +173,8 @@ function updateItineraryPreview() {
 }
 
 /* =========================================
-   💰 記帳本「100% 黏手滑動」與「雲端同步」
+   💰 記帳本邏輯 (雲端同步)
 ========================================= */
-
-// ☁️ 雲端：同步資料
 async function syncFromCloud() {
     try {
         const response = await fetch(CLOUD_API_URL + "?t=" + new Date().getTime());
@@ -197,7 +187,6 @@ async function syncFromCloud() {
     } catch (e) { console.error("同步失敗", e); }
 }
 
-// ☁️ 雲端：新增
 async function addExpense() {
     const payer = document.querySelector('input[name="payer"]:checked').value;
     const amount = parseInt(document.getElementById('expense-amount').value);
@@ -205,29 +194,22 @@ async function addExpense() {
     if (!amount || amount <= 0 || !desc) { alert("資訊不完整"); return; }
 
     const newExp = { action: "add", id: Date.now().toString(), payer, amount, desc, date: new Date().toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) };
-
-    // 畫面先行
     expenses.push(newExp);
     localStorage.setItem('travelExpenses', JSON.stringify(expenses));
     renderExpenses();
     document.getElementById('expense-amount').value = '';
     document.getElementById('expense-desc').value = '';
-
-    // 背景傳送 (iOS CORS 繞過寫法)
     fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(newExp) }).catch(e => console.error(e));
 }
 
-// ☁️ 雲端：刪除
 async function deleteExpense(id) {
     if(!confirm("確定刪除？")) return;
     expenses = expenses.filter(exp => exp.id != id);
     localStorage.setItem('travelExpenses', JSON.stringify(expenses));
     renderExpenses();
-
     fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: "delete", id: id }) }).catch(e => console.error(e));
 }
 
-// UI：開啟與渲染
 function openExpenseModal() {
     const modal = document.getElementById('expenseModal');
     modal.style.display = 'flex';
@@ -248,7 +230,6 @@ function renderExpenses(isLoading = false) {
     const listContainer = document.getElementById('expense-list');
     listContainer.innerHTML = isLoading ? '<p style="text-align:center; color:#86868b; font-size:12px; margin-top:20px;">☁️ 同步中...</p>' : '';
     let tTotal = 0; let jTotal = 0;
-    
     [...expenses].reverse().forEach(exp => {
         const amt = parseInt(exp.amount);
         if (exp.payer === 'Timmy') tTotal += amt; else jTotal += amt;
@@ -256,7 +237,6 @@ function renderExpenses(isLoading = false) {
         const color = exp.payer === 'Timmy' ? 'color-timmy' : 'color-jj';
         listContainer.innerHTML += `<div class="exp-item"><div class="exp-item-left"><div class="exp-avatar ${color}">${icon}</div><div class="exp-info"><span class="exp-desc">${exp.desc}</span><span class="exp-date">${exp.date}</span></div></div><div class="exp-item-right"><span class="exp-price">¥${amt.toLocaleString()}</span><div class="exp-delete" onclick="deleteExpense('${exp.id}')">🗑️</div></div></div>`;
     });
-
     const total = tTotal + jTotal;
     document.getElementById('total-amount').innerText = total.toLocaleString();
     document.getElementById('timmy-paid').innerText = tTotal.toLocaleString();
@@ -269,22 +249,27 @@ function renderExpenses(isLoading = false) {
 }
 
 /* =========================================
-   ✨ 核心啟動 (含 100% 黏手滑動邏輯)
+   ✨ 核心啟動 (含動態位置偵測修正)
 ========================================= */
 function init() {
-    // 1. 天氣與位置
+    // 🚀 修正點：使用反向地理編碼 API 抓取城市名稱
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
             const { latitude: lat, longitude: lon } = pos.coords;
-            fetchWeather(lat, lon, "目前位置");
+            try {
+                // 呼叫免費 API 將經緯度轉為行政區/城市名
+                const geo = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`);
+                const gData = await geo.json();
+                fetchWeather(lat, lon, gData.city || gData.locality || "目前位置");
+            } catch {
+                fetchWeather(lat, lon, "目前位置");
+            }
         }, () => fetchWeather(34.69, 135.50, "大阪市"));
     } else { fetchWeather(34.69, 135.50, "大阪市"); }
 
-    // 2. 啟動計時器與預覽
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000);
 
-    // 3. 🚀 100% 黏手滑動算法 (針對 Payer Toggle)
     const toggleArea = document.querySelector('.payer-toggle');
     const slider = document.querySelector('.toggle-slider');
     if (toggleArea && slider) {
@@ -295,7 +280,6 @@ function init() {
             currentTranslate = document.getElementById('payer-jj').checked ? maxT : 0;
             slider.style.transition = 'none';
         }, { passive: true });
-
         toggleArea.addEventListener('touchmove', e => {
             if (!isDragging) return;
             let moveX = e.touches[0].clientX;
@@ -305,7 +289,6 @@ function init() {
             slider.style.transform = `translateX(${finalX}px)`;
             if (Math.abs(diff) > 5) e.preventDefault();
         }, { passive: false });
-
         toggleArea.addEventListener('touchend', e => {
             isDragging = false;
             let endX = e.changedTouches[0].clientX;
