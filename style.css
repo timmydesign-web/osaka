@@ -154,7 +154,7 @@ header h1 { margin: 0; font-size: 24px; }
 
 .add-expense-form { background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 
-/* 記帳本滑動按鈕特效 */
+/* --- 🚀 記帳本滑動按鈕：移除灰底、加入防選取文字 --- */
 .payer-toggle { 
     position: relative; display: flex; background: #e5e5ea; border-radius: 12px; 
     padding: 4px; margin-bottom: 15px; z-index: 1;
@@ -163,6 +163,8 @@ header h1 { margin: 0; font-size: 24px; }
 .payer-toggle label { 
     position: relative; z-index: 2; flex: 1; text-align: center; padding: 8px 0; 
     font-size: 13px; font-weight: 600; color: #86868b; cursor: pointer; transition: color 0.3s ease; 
+    -webkit-tap-highlight-color: transparent; /* 移除點擊時的灰色框 */
+    user-select: none; -webkit-user-select: none; /* 防止滑動時選取文字 */
 }
 .payer-toggle input:checked + label[for="payer-timmy"] { color: #5e5ce6; }
 .payer-toggle input:checked + label[for="payer-jj"] { color: #ff2d55; }
