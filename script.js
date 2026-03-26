@@ -26,14 +26,10 @@ function openModal(dayId, event) {
     }
 }
 
-// 修正點：新增點擊動態看板進入當日行程的功能
 function openCurrentDayPreview(event) {
     const now = new Date();
-    // 判斷今天是第幾天 (8/10為Day1，以此類推至8/17為Day8)
     let dayNum = (now.getMonth() + 1 === 8 && now.getDate() >= 10 && now.getDate() <= 17) 
                     ? now.getDate() - 9 : 1; 
-    
-    // 將點擊事件傳入，這樣視窗就會從預覽方塊中心帥氣地彈出
     openModal('day' + dayNum, event);
 }
 
@@ -51,11 +47,6 @@ function closeModal() {
         document.body.style.overflow = '';
     }
 }
-
-window.onclick = function(event) {
-    const modal = document.getElementById('itineraryModal');
-    if (event.target === modal) closeModal();
-};
 
 function getWeatherEmoji(code) {
     const table = { 0: "☀️", 1: "⛅", 2: "⛅", 3: "☁️", 45: "🌫️", 51: "🌧️", 61: "🌧️", 95: "⛈️" };
@@ -140,21 +131,15 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   💰 記帳本專用邏輯 (Timmy & ㄐㄐ)
+   💰 記帳本專用邏輯
 ========================================= */
-
-// 從瀏覽器本地讀取記帳資料，若無則為空陣列
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
 function openExpenseModal(event) {
     const modal = document.getElementById('expenseModal');
     modal.style.display = 'flex';
-    
-    // 動畫效果
     setTimeout(() => { modal.classList.add('open'); }, 10);
     document.body.style.overflow = 'hidden';
-    
-    // 每次打開時更新結算畫面
     renderExpenses();
 }
 
@@ -165,7 +150,6 @@ function closeExpenseModal() {
     document.body.style.overflow = '';
 }
 
-// 修改原有的 window.onclick，讓點擊背景也能關閉記帳本
 window.onclick = function(event) {
     const itModal = document.getElementById('itineraryModal');
     const expModal = document.getElementById('expenseModal');
@@ -177,7 +161,6 @@ function addExpense() {
     const payer = document.querySelector('input[name="payer"]:checked').value;
     const amountInput = document.getElementById('expense-amount').value;
     const descInput = document.getElementById('expense-desc').value;
-
     const amount = parseInt(amountInput);
     
     if (!amount || amount <= 0 || !descInput.trim()) {
@@ -185,7 +168,6 @@ function addExpense() {
         return;
     }
 
-    // 建立新一筆帳目
     const newExpense = {
         id: Date.now(),
         payer: payer,
@@ -195,12 +177,10 @@ function addExpense() {
     };
 
     expenses.push(newExpense);
-    localStorage.setItem('travelExpenses', JSON.stringify(expenses)); // 存檔
+    localStorage.setItem('travelExpenses', JSON.stringify(expenses));
     
-    // 清空輸入框
     document.getElementById('expense-amount').value = '';
     document.getElementById('expense-desc').value = '';
-    
     renderExpenses();
 }
 
@@ -219,7 +199,6 @@ function renderExpenses() {
     let timmyTotal = 0;
     let jjTotal = 0;
 
-    // 將陣列反轉，讓最新的花費顯示在最上面
     const reversedExpenses = [...expenses].reverse();
 
     reversedExpenses.forEach(exp => {
@@ -253,17 +232,13 @@ function renderExpenses() {
         listContainer.innerHTML = '<p style="text-align:center; color:#86868b; font-size:12px; margin-top:20px;">尚無紀錄，開始記帳吧！</p>';
     }
 
-    // 更新總覽面板
     const total = timmyTotal + jjTotal;
     document.getElementById('total-amount').innerText = total.toLocaleString();
     document.getElementById('timmy-paid').innerText = timmyTotal.toLocaleString();
     document.getElementById('jj-paid').innerText = jjTotal.toLocaleString();
 
-    // 核心結算邏輯 (AA制計算)
     const settlementText = document.getElementById('settlement-text');
     const diff = timmyTotal - jjTotal;
-    
-    // 假設 AA制，多付的人應該拿回一半的差額
     const halfDiff = Math.abs(diff) / 2;
 
     if (diff > 0) {
