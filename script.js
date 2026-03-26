@@ -51,7 +51,6 @@ function getWeatherEmoji(code) {
     return table[code] || "🌤️";
 }
 
-// 修正後的天氣時間抓取邏輯：優先比對當地小時
 async function fetchWeather(lat, lon, cityName) {
     const hourlyContainer = document.getElementById('hourly-forecast');
     const titleDesc = document.getElementById('current-weather-desc');
@@ -60,22 +59,16 @@ async function fetchWeather(lat, lon, cityName) {
         locationName.innerHTML = `📍 ${cityName}`;
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&timezone=auto&forecast_days=2`);
         const data = await res.json();
-        
         titleDesc.innerHTML = `${getWeatherEmoji(data.current_weather.weathercode)} ${Math.round(data.current_weather.temperature)}°C`;
 
-        // 核心修正：抓取使用者當地時間的小時
-        const localNow = new Date();
-        const nowHour = localNow.getHours();
-        const hourlyTimes = data.hourly.time;
-        
-        // 在 API 返回的時間數組中，尋找小時數值相符且日期最接近的索引
-        let startIndex = hourlyTimes.findIndex(t => parseInt(t.substring(11, 13)) === nowHour);
+        const nowHour = new Date().getHours();
+        let startIndex = data.hourly.time.findIndex(t => parseInt(t.substring(11, 13)) === nowHour);
         if (startIndex === -1) startIndex = 0;
 
         let html = '';
         for (let i = startIndex; i < startIndex + 24; i++) {
-            if (!hourlyTimes[i]) break;
-            const label = (i === startIndex) ? "現在" : hourlyTimes[i].substring(11, 16);
+            if (!data.hourly.time[i]) break;
+            const label = (i === startIndex) ? "現在" : data.hourly.time[i].substring(11, 16);
             html += `
                 <div class="hourly-item">
                     <span class="h-time serif">${label}</span>
@@ -87,12 +80,9 @@ async function fetchWeather(lat, lon, cityName) {
     } catch (e) { titleDesc.innerHTML = "同步中"; }
 }
 
-// 修正行程預覽邏輯
 function updateItineraryPreview() {
     const now = new Date();
     const currentScore = now.getHours() * 60 + now.getMinutes();
-    
-    // 如果不是 8 月，預設使用 Day 1 的行程做顯示範例
     let dayDataId = (now.getMonth() + 1 === 8 && now.getDate() >= 10 && now.getDate() <= 17) 
                     ? `content-day${now.getDate() - 9}` : "content-day1";
 
@@ -101,20 +91,11 @@ function updateItineraryPreview() {
 
     const items = Array.from(daySection.querySelectorAll('.time-item'));
     const itinerary = items.map(el => {
-        const timeValue = el.getAttribute('data-time');
-        const [h, m] = timeValue.split(':').map(Number);
-        return { time: timeValue, score: h * 60 + m, title: el.querySelector('span:last-child').innerText };
+        const [h, m] = el.getAttribute('data-time').split(':').map(Number);
+        return { time: el.getAttribute('data-time'), score: h * 60 + m, title: el.querySelector('span:last-child').innerText };
     });
 
-    // 尋找目前最接近且已經開始的行程
-    let currentIdx = -1;
-    for (let i = 0; i < itinerary.length; i++) {
-        if (currentScore >= itinerary[i].score) {
-            currentIdx = i;
-        }
-    }
-
-    // 若還沒到今天的任何行程，顯示第一個
+    let currentIdx = itinerary.findLastIndex(item => currentScore >= item.score);
     if (currentIdx === -1) currentIdx = 0;
 
     const currentItem = itinerary[currentIdx];
