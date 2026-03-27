@@ -52,6 +52,9 @@ header h1 { margin: 0; font-size: 24px; }
 .hourly-item .h-icon { font-size: 20px; margin-bottom: 6px; }
 .hourly-item .h-temp { font-size: 15px; font-weight: 700; }
 
+/* 🚀 新增：降雨機率的樣式 */
+.hourly-item .h-precip { font-size: 10px; color: var(--ios-blue); font-weight: 600; margin-top: 2px; }
+
 .hero { display: flex; justify-content: center; padding: 0; width: 100%; }
 .expense-trigger-section { display: flex; justify-content: center; padding: 0 0 40px 0; width: 100%; }
 
