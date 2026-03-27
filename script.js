@@ -23,8 +23,6 @@ function openModal(dayId, event) {
         void modal.offsetWidth; 
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
-        
-        // 打開視窗瞬間，立刻觸發一次計算，讓移動的圓點精準定位
         updateItineraryPreview();
     }
 }
@@ -35,8 +33,6 @@ function openCurrentDayPreview(event) {
     const month = now.getMonth() + 1;
     const date = now.getDate();
     let dayNum = 1;
-    
-    // 正確的日期判定邏輯 (旅程區間: 2026/8/10 ~ 8/17)
     if (year === 2026 && month === 8 && date >= 10 && date <= 17) {
         dayNum = date - 9; 
     }
@@ -99,10 +95,8 @@ function updateItineraryPreview() {
     const heroNextTime = document.getElementById('preview-next-time');
     const heroNextLabel = document.getElementById('preview-next-label');
 
-    // 嚴格旅程判定
     const isTripTime = (year === 2026 && month === 8 && date >= 10 && date <= 17);
     
-    // 清除所有行程亮點與位移
     document.querySelectorAll('.time-item').forEach(el => {
         el.classList.remove('active');
         el.style.setProperty('--dot-offset', '0px');
@@ -156,7 +150,6 @@ function updateItineraryPreview() {
         heroNowTime.innerText = currentItem.time; heroNowTitle.innerText = currentItem.title;
         heroNextTitle.innerText = nextItem.title; heroNextTime.innerText = nextItem.time;
 
-        // --- 🚀 計算移動閃爍圓點的進度比例 ---
         let ratio = 0;
         if (nextItem.time !== "--:--") {
             const totalMins = nextItem.score - currentItem.score;
@@ -166,7 +159,6 @@ function updateItineraryPreview() {
             }
         }
 
-        // 把動態位移與閃爍效果應用在【目前開啟的視窗】內的圓點上
         const modal = document.getElementById('itineraryModal');
         if (modal && modal.classList.contains('open')) {
             const modalHeader = document.querySelector('#modalBody h2');
@@ -174,8 +166,6 @@ function updateItineraryPreview() {
                 const modalItems = document.querySelectorAll('#modalBody .time-item');
                 if (modalItems[currentIdx]) {
                     modalItems[currentIdx].classList.add('active');
-                    
-                    // 抓取真實排版像素差，算出圓點該滑動多少
                     let mDistance = 0;
                     if (modalItems[currentIdx + 1]) {
                         mDistance = modalItems[currentIdx + 1].offsetTop - modalItems[currentIdx].offsetTop;
@@ -200,7 +190,7 @@ function init() {
     } else { fetchWeather(34.69, 135.50, "大阪市 (預設)"); }
 
     updateItineraryPreview();
-    setInterval(updateItineraryPreview, 30000); // 每 30 秒平滑推進一次圓點
+    setInterval(updateItineraryPreview, 30000); 
     renderPhotoDiary();
 
     const toggleArea = document.querySelector('.payer-toggle');
@@ -244,10 +234,11 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   📷 旅程回憶錄邏輯
+   📷 旅程回憶錄邏輯 (查看與刪除)
 ========================================= */
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
+let currentViewDay = null; // 紀錄正在查看哪一天的照片
 
 function renderPhotoDiary() {
     const grid = document.getElementById('photo-grid');
@@ -256,8 +247,10 @@ function renderPhotoDiary() {
     for (let i = 1; i <= 8; i++) {
         const hasPhoto = !!travelPhotos[`day${i}`];
         if (hasPhoto) {
-            grid.innerHTML += `<div class="photo-card" onclick="triggerUpload(${i})"><div class="photo-card-inner"><img src="${travelPhotos[`day${i}`]}" alt="Day ${i}"><div class="photo-overlay-label">Day ${i}</div></div></div>`;
+            // 有照片：點擊打開檢視視窗
+            grid.innerHTML += `<div class="photo-card" onclick="viewPhoto(${i})"><div class="photo-card-inner"><img src="${travelPhotos[`day${i}`]}" alt="Day ${i}"><div class="photo-overlay-label">Day ${i}</div></div></div>`;
         } else {
+            // 沒照片：點擊開啟上傳
             grid.innerHTML += `<div class="photo-card" onclick="triggerUpload(${i})"><div class="photo-card-inner empty"><span class="photo-add-icon">➕</span><span class="photo-day-label">Day ${i}</span></div></div>`;
         }
     }
@@ -292,6 +285,31 @@ function handlePhotoUpload(event) {
     reader.readAsDataURL(file);
 }
 
+function viewPhoto(day) {
+    currentViewDay = day;
+    const modal = document.getElementById('photoViewerModal');
+    document.getElementById('viewer-img').src = travelPhotos[`day${day}`];
+    modal.style.display = 'flex';
+    setTimeout(() => { modal.classList.add('open'); }, 10);
+    document.body.style.overflow = 'hidden';
+}
+
+function closePhotoViewer() {
+    const modal = document.getElementById('photoViewerModal');
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 300);
+    document.body.style.overflow = '';
+}
+
+function deletePhoto() {
+    if(confirm("確定要刪除這張照片嗎？")) {
+        delete travelPhotos[`day${currentViewDay}`];
+        localStorage.setItem('travelPhotos', JSON.stringify(travelPhotos));
+        renderPhotoDiary();
+        closePhotoViewer();
+    }
+}
+
 /* =========================================
    ☁️ 記帳本邏輯
 ========================================= */
@@ -314,11 +332,14 @@ function closeExpenseModal() {
     document.body.style.overflow = '';
 }
 
+// 統一管理所有彈出視窗的點擊背景關閉
 window.onclick = function(event) {
     const itModal = document.getElementById('itineraryModal');
     const expModal = document.getElementById('expenseModal');
+    const photoModal = document.getElementById('photoViewerModal');
     if (event.target === itModal) closeModal();
     if (event.target === expModal) closeExpenseModal();
+    if (event.target === photoModal) closePhotoViewer();
 };
 
 async function syncFromCloud() {
