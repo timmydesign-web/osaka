@@ -65,7 +65,8 @@ async function fetchWeather(lat, lon, cityName) {
     const locationName = document.getElementById('location-name');
     try {
         locationName.innerHTML = `📍 ${cityName}`;
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&timezone=auto&forecast_days=2`);
+        // 🚀 新增：API 網址加入 precipitation_probability
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&timezone=auto&forecast_days=2`);
         const data = await res.json();
         titleDesc.innerHTML = `${getWeatherEmoji(data.current_weather.weathercode)} ${Math.round(data.current_weather.temperature)}°C`;
 
@@ -77,7 +78,9 @@ async function fetchWeather(lat, lon, cityName) {
         for (let i = startIndex; i < startIndex + 24; i++) {
             if (!data.hourly.time[i]) break;
             const label = (i === startIndex) ? "現在" : data.hourly.time[i].substring(11, 16);
-            html += `<div class="hourly-item"><span class="h-time serif">${label}</span><span class="h-icon">${getWeatherEmoji(data.hourly.weathercode[i])}</span><span class="h-temp serif">${Math.round(data.hourly.temperature_2m[i])}°</span></div>`;
+            // 🚀 新增：抓取降雨機率，並加入 h-precip 標籤
+            const precip = data.hourly.precipitation_probability[i] || 0;
+            html += `<div class="hourly-item"><span class="h-time serif">${label}</span><span class="h-icon">${getWeatherEmoji(data.hourly.weathercode[i])}</span><span class="h-temp serif">${Math.round(data.hourly.temperature_2m[i])}°</span><span class="h-precip">${precip}%</span></div>`;
         }
         hourlyContainer.innerHTML = html;
     } catch (e) { titleDesc.innerHTML = "同步中"; }
@@ -238,7 +241,7 @@ document.addEventListener('DOMContentLoaded', init);
 ========================================= */
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
-let currentViewDay = null; // 紀錄正在查看哪一天的照片
+let currentViewDay = null; 
 
 function renderPhotoDiary() {
     const grid = document.getElementById('photo-grid');
@@ -247,10 +250,8 @@ function renderPhotoDiary() {
     for (let i = 1; i <= 8; i++) {
         const hasPhoto = !!travelPhotos[`day${i}`];
         if (hasPhoto) {
-            // 有照片：點擊打開檢視視窗
             grid.innerHTML += `<div class="photo-card" onclick="viewPhoto(${i})"><div class="photo-card-inner"><img src="${travelPhotos[`day${i}`]}" alt="Day ${i}"><div class="photo-overlay-label">Day ${i}</div></div></div>`;
         } else {
-            // 沒照片：點擊開啟上傳
             grid.innerHTML += `<div class="photo-card" onclick="triggerUpload(${i})"><div class="photo-card-inner empty"><span class="photo-add-icon">➕</span><span class="photo-day-label">Day ${i}</span></div></div>`;
         }
     }
@@ -332,7 +333,6 @@ function closeExpenseModal() {
     document.body.style.overflow = '';
 }
 
-// 統一管理所有彈出視窗的點擊背景關閉
 window.onclick = function(event) {
     const itModal = document.getElementById('itineraryModal');
     const expModal = document.getElementById('expenseModal');
