@@ -1,9 +1,10 @@
 let currentActiveButton = null;
 
-function setModalOrigin() {
-    if (!currentActiveButton) return;
-    const modalContent = document.querySelector('.modal-content');
-    const btnRect = currentActiveButton.getBoundingClientRect();
+function setModalOrigin(event) {
+    const target = event ? event.currentTarget : currentActiveButton;
+    if (!target) return;
+    const modalContent = document.querySelector('.modal.open .modal-content') || document.querySelector('.modal-content');
+    const btnRect = target.getBoundingClientRect();
     const layoutLeft = (window.innerWidth - modalContent.offsetWidth) / 2;
     const layoutTop = (window.innerHeight - modalContent.offsetHeight) / 2;
     const originX = btnRect.left + (btnRect.width / 2) - layoutLeft;
@@ -19,10 +20,9 @@ function openModal(dayId, event) {
         currentActiveButton = event.currentTarget;
         modalBody.innerHTML = sourceContent.innerHTML;
         modal.style.display = 'flex';
-        setModalOrigin();
+        setModalOrigin(event);
         void modal.offsetWidth; 
         modal.classList.add('open');
-        document.body.style.overflow = 'hidden';
         updateItineraryPreview();
     }
 }
@@ -50,7 +50,6 @@ function closeModal() {
                 currentActiveButton = null;
             }
         }, 400); 
-        document.body.style.overflow = '';
     }
 }
 
@@ -65,7 +64,6 @@ async function fetchWeather(lat, lon, cityName) {
     const locationName = document.getElementById('location-name');
     try {
         locationName.innerHTML = `📍 ${cityName}`;
-        // 🚀 新增：API 網址加入 precipitation_probability
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&timezone=auto&forecast_days=2`);
         const data = await res.json();
         titleDesc.innerHTML = `${getWeatherEmoji(data.current_weather.weathercode)} ${Math.round(data.current_weather.temperature)}°C`;
@@ -78,7 +76,6 @@ async function fetchWeather(lat, lon, cityName) {
         for (let i = startIndex; i < startIndex + 24; i++) {
             if (!data.hourly.time[i]) break;
             const label = (i === startIndex) ? "現在" : data.hourly.time[i].substring(11, 16);
-            // 🚀 新增：抓取降雨機率，並加入 h-precip 標籤
             const precip = data.hourly.precipitation_probability[i] || 0;
             html += `<div class="hourly-item"><span class="h-time serif">${label}</span><span class="h-icon">${getWeatherEmoji(data.hourly.weathercode[i])}</span><span class="h-temp serif">${Math.round(data.hourly.temperature_2m[i])}°</span><span class="h-precip">${precip}%</span></div>`;
         }
@@ -237,11 +234,34 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   📷 旅程回憶錄邏輯 (查看與刪除)
+   📷 旅程回憶錄邏輯 (Modal 彈出視窗)
 ========================================= */
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
 let currentViewDay = null; 
+
+function openPhotoDiaryModal(event) {
+    currentActiveButton = event.currentTarget;
+    const modal = document.getElementById('photoDiaryModal');
+    modal.style.display = 'flex';
+    setModalOrigin(event);
+    void modal.offsetWidth;
+    modal.classList.add('open');
+}
+
+function closePhotoDiaryModal() {
+    const modal = document.getElementById('photoDiaryModal');
+    if (modal) {
+        setModalOrigin();
+        modal.classList.remove('open');
+        setTimeout(() => {
+            if (!modal.classList.contains('open')) {
+                modal.style.display = 'none';
+                currentActiveButton = null;
+            }
+        }, 400);
+    }
+}
 
 function renderPhotoDiary() {
     const grid = document.getElementById('photo-grid');
@@ -292,14 +312,12 @@ function viewPhoto(day) {
     document.getElementById('viewer-img').src = travelPhotos[`day${day}`];
     modal.style.display = 'flex';
     setTimeout(() => { modal.classList.add('open'); }, 10);
-    document.body.style.overflow = 'hidden';
 }
 
 function closePhotoViewer() {
     const modal = document.getElementById('photoViewerModal');
     modal.classList.remove('open');
     setTimeout(() => { modal.style.display = 'none'; }, 300);
-    document.body.style.overflow = '';
 }
 
 function deletePhoto() {
@@ -318,27 +336,39 @@ const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmv
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
 function openExpenseModal(event) {
+    currentActiveButton = event.currentTarget;
     const modal = document.getElementById('expenseModal');
     modal.style.display = 'flex';
-    setTimeout(() => { modal.classList.add('open'); }, 10);
-    document.body.style.overflow = 'hidden';
+    setModalOrigin(event);
+    void modal.offsetWidth;
+    modal.classList.add('open');
     renderExpenses(expenses.length === 0); 
     syncFromCloud();
 }
 
 function closeExpenseModal() {
     const modal = document.getElementById('expenseModal');
-    modal.classList.remove('open');
-    setTimeout(() => { modal.style.display = 'none'; }, 300);
-    document.body.style.overflow = '';
+    if (modal) {
+        setModalOrigin();
+        modal.classList.remove('open');
+        setTimeout(() => {
+            if (!modal.classList.contains('open')) {
+                modal.style.display = 'none';
+                currentActiveButton = null;
+            }
+        }, 400);
+    }
 }
 
 window.onclick = function(event) {
     const itModal = document.getElementById('itineraryModal');
     const expModal = document.getElementById('expenseModal');
+    const diaryModal = document.getElementById('photoDiaryModal');
     const photoModal = document.getElementById('photoViewerModal');
+    
     if (event.target === itModal) closeModal();
     if (event.target === expModal) closeExpenseModal();
+    if (event.target === diaryModal) closePhotoDiaryModal();
     if (event.target === photoModal) closePhotoViewer();
 };
 
