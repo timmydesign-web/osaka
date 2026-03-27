@@ -34,7 +34,7 @@
             </div>
         </nav>
 
-        <section class="weather-widget">
+        <section class="weather-widget layout-width">
             <div class="weather-header">
                 <div class="weather-left">
                     <h2 class="city-name" id="location-name">📍 定位中...</h2>
@@ -44,10 +44,11 @@
                     <h3 id="current-weather-desc" class="serif">同步中...</h3>
                 </div>
             </div>
-            <div class="hourly-forecast" id="hourly-forecast"></div>
+            <div class="hourly-forecast" id="hourly-forecast">
+                </div>
         </section>
 
-        <section class="hero">
+        <section class="hero layout-width">
             <div class="hero-card preview-card-content" onclick="openCurrentDayPreview(event)">
                 <div class="preview-middle">
                     <span class="current-time serif" id="preview-now-time">--:--</span>
@@ -65,7 +66,7 @@
             </div>
         </section>
 
-        <section class="expense-trigger-section">
+        <section class="expense-trigger-section layout-width">
             <div class="trigger-card" onclick="openExpenseModal(event)">
                 <div class="trig-left">
                     <span class="trig-icon">💰</span>
@@ -78,8 +79,8 @@
             </div>
         </section>
 
-        <section class="photo-trigger-section">
-            <div class="trigger-card photo-trigger-card" onclick="openPhotoDiaryModal(event)">
+        <section class="photo-trigger-section layout-width">
+            <div class="trigger-card" onclick="openPhotoDiaryModal(event)">
                 <div class="trig-left">
                     <span class="trig-icon">📷</span>
                     <div class="trig-text">
@@ -94,14 +95,14 @@
         <input type="file" id="photo-upload-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
 
         <div id="itineraryModal" class="modal" style="display: none;">
-            <div class="modal-content">
+            <div class="modal-content layout-width">
                 <div class="close-btn" onclick="closeModal()">×</div>
                 <div id="modalBody"></div>
             </div>
         </div>
 
         <div id="expenseModal" class="modal" style="display: none;">
-            <div class="modal-content expense-modal-content">
+            <div class="modal-content expense-modal-content layout-width">
                 <div class="close-btn" onclick="closeExpenseModal()">×</div>
                 <div class="ios-modal-header"><h2>雙人記帳本</h2></div>
                 
@@ -134,8 +135,12 @@
                         <label for="cat-other">🏷️ 其他</label>
                     </div>
 
-                    <div class="input-row"><input type="number" id="expense-amount" placeholder="金額 (日幣 ¥)" required></div>
-                    <div class="input-row"><input type="text" id="expense-desc" placeholder="項目 (例: 大喜豬排)" required></div>
+                    <div class="input-row">
+                        <input type="text" inputmode="numeric" pattern="[0-9]*" id="expense-amount" placeholder="金額 (日幣 ¥)" required>
+                    </div>
+                    <div class="input-row">
+                        <input type="text" id="expense-desc" placeholder="項目 (例: 大喜豬排)" required>
+                    </div>
                     <button class="add-btn" onclick="addExpense()">➕ 記上一筆</button>
                 </div>
 
@@ -151,7 +156,7 @@
         </div>
 
         <div id="photoDiaryModal" class="modal" style="display: none;">
-            <div class="modal-content photo-diary-modal-content">
+            <div class="modal-content photo-diary-modal-content layout-width">
                 <div class="close-btn" onclick="closePhotoDiaryModal()">×</div>
                 <div class="ios-modal-header"><h2>📷 旅程回憶錄</h2></div>
                 <p style="text-align: center; color: #86868b; font-size: 13px; font-weight: 500; margin-top: -10px; margin-bottom: 20px;">點擊空位上傳，點擊相片放大</p>
@@ -160,7 +165,7 @@
         </div>
 
         <div id="photoViewerModal" class="modal" style="display: none;">
-            <div class="modal-content photo-viewer-content">
+            <div class="modal-content photo-viewer-content layout-width">
                 <div class="close-btn" onclick="closePhotoViewer()">×</div>
                 <h2 style="font-size: 18px; margin: 0 0 10px 0; color: #1d1d1f;">相片檢視</h2>
                 <img id="viewer-img" src="" alt="Full size photo">
@@ -406,7 +411,7 @@
         </div>
     </main>
 
-    <footer><p>© 2026 Kansai Adventure | iOS 26 Visuals</p></footer>
+    <footer><p>© 2026 Kansai Adventure | Timmy design </p></footer>
     <script src="script.js"></script>
 </body>
 </html>
