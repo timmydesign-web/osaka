@@ -67,8 +67,9 @@ header h1 {
     margin-top: 5px; 
 }
 
-/* 主頁方塊與彈出視窗的對齊設定 */
-.layout-width {
+/* 🚀 修正：將 .nav-container 也加入等寬對齊設定，讓它跟下方卡片切齊 */
+.layout-width,
+.nav-container {
     width: 90% !important; 
     max-width: 400px !important; 
     margin-left: auto !important; 
@@ -355,7 +356,7 @@ header h1 {
     transition: opacity 0.3s; 
     align-items: center; 
     justify-content: center; 
-    cursor: pointer; /* 點擊背景關閉設定 */
+    cursor: pointer; 
 }
 
 .modal.open { 
@@ -363,7 +364,6 @@ header h1 {
     display: flex !important; 
 }
 
-/* 🚀 修正：高度放大到 70vh，保留上下空間 */
 .modal-content { 
     background: rgba(255, 255, 255, 0.96); 
     backdrop-filter: blur(40px); 
@@ -384,7 +384,6 @@ header h1 {
     transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s; 
 }
 
-/* 🚀 修正：改用 sticky 與 float，解決滑走不見的問題 */
 .close-btn { 
     position: sticky; 
     top: 15px; 
@@ -1022,7 +1021,6 @@ header h1 {
     border-radius: 25px; 
 }
 
-/* 🚀 修正 2：同步放大圖片最大高度到 50vh */
 #viewer-img { 
     width: 100%; 
     max-height: 50vh; 
