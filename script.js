@@ -37,7 +37,6 @@ function openCurrentDayPreview(event) {
     const date = now.getDate();
     let dayNum = 1;
     
-    // 正確的旅程時間判定 2026/8/10 ~ 2026/8/17
     if (year === 2026 && month === 8 && date >= 10 && date <= 17) {
         dayNum = date - 9; 
     }
@@ -47,7 +46,6 @@ function openCurrentDayPreview(event) {
 function closeModal() {
     const modal = document.getElementById('itineraryModal');
     if (modal) {
-        setModalOrigin();
         modal.classList.remove('open');
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
@@ -206,7 +204,6 @@ function init() {
 
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
-    renderPhotoDiary();
 
     const toggleArea = document.querySelector('.payer-toggle');
     const slider = document.querySelector('.toggle-slider');
@@ -251,10 +248,10 @@ function init() {
         });
     }
 
-    // 🚀 全新修正：綁定所有 Modal 的點擊事件，讓點擊視窗外緣（空白處）完美關閉視窗
+    // 🚀 核心修正 3：完美背景點擊關閉視窗功能，支援手機與電腦版
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
-            // 確保點擊到的是背景 (modal 本身)，而不是白色的視窗內容 (modal-content)
+            // 確保點到的是背景 (.modal) 而不是視窗內部的白色區域 (.modal-content)
             if (event.target === this) {
                 if (this.id === 'itineraryModal') closeModal();
                 else if (this.id === 'expenseModal') closeExpenseModal();
@@ -268,7 +265,7 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   📷 旅程回憶錄邏輯 (Modal 彈出視窗)
+   📷 旅程回憶錄邏輯
 ========================================= */
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
@@ -288,7 +285,6 @@ function openPhotoDiaryModal(event) {
 function closePhotoDiaryModal() {
     const modal = document.getElementById('photoDiaryModal');
     if (modal) {
-        setModalOrigin();
         modal.classList.remove('open');
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
@@ -400,7 +396,6 @@ function openExpenseModal(event) {
 function closeExpenseModal() {
     const modal = document.getElementById('expenseModal');
     if (modal) {
-        setModalOrigin();
         modal.classList.remove('open');
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
