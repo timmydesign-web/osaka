@@ -195,12 +195,29 @@ function init() {
         navigator.geolocation.getCurrentPosition(async (pos) => {
             const { latitude: lat, longitude: lon } = pos.coords;
             try {
+                // 呼叫地名轉換 API
                 const geo = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`);
                 const gData = await geo.json();
-                fetchWeather(lat, lon, gData.city || "目前位置");
-            } catch { fetchWeather(lat, lon, "目前位置"); }
-        }, () => fetchWeather(34.69, 135.50, "大阪市 (預設)"));
-    } else { fetchWeather(34.69, 135.50, "大阪市 (預設)"); }
+                
+                // 🚀 全新精準定位邏輯：抓取市 + 區
+                let cityStr = gData.city || gData.principalSubdivision || "";
+                let localityStr = gData.locality || "";
+                let displayName = "目前位置";
+                
+                if (cityStr && localityStr && cityStr !== localityStr) {
+                    displayName = `${cityStr} ${localityStr}`;
+                } else if (cityStr || localityStr) {
+                    displayName = cityStr || localityStr;
+                }
+                
+                fetchWeather(lat, lon, displayName);
+            } catch { 
+                fetchWeather(lat, lon, "目前位置"); 
+            }
+        }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); // 定位失敗時預設顯示飯店所在的中央區
+    } else { 
+        fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); 
+    }
 
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
@@ -248,10 +265,8 @@ function init() {
         });
     }
 
-    // 🚀 核心修正 3：完美背景點擊關閉視窗功能，支援手機與電腦版
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
-            // 確保點到的是背景 (.modal) 而不是視窗內部的白色區域 (.modal-content)
             if (event.target === this) {
                 if (this.id === 'itineraryModal') closeModal();
                 else if (this.id === 'expenseModal') closeExpenseModal();
@@ -265,7 +280,7 @@ function init() {
 document.addEventListener('DOMContentLoaded', init);
 
 /* =========================================
-   📷 旅程回憶錄邏輯
+   📷 旅程回憶錄邏輯 (Modal 彈出視窗)
 ========================================= */
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
@@ -285,6 +300,7 @@ function openPhotoDiaryModal(event) {
 function closePhotoDiaryModal() {
     const modal = document.getElementById('photoDiaryModal');
     if (modal) {
+        setModalOrigin();
         modal.classList.remove('open');
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
@@ -396,6 +412,7 @@ function openExpenseModal(event) {
 function closeExpenseModal() {
     const modal = document.getElementById('expenseModal');
     if (modal) {
+        setModalOrigin();
         modal.classList.remove('open');
         setTimeout(() => {
             if (!modal.classList.contains('open')) {
