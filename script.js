@@ -1,5 +1,19 @@
 let currentActiveButton = null;
 
+// 導覽列分頁切換
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-view').forEach(view => {
+        view.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    document.getElementById('view-' + tabId).classList.add('active');
+    document.getElementById('btn-' + tabId).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function setModalOrigin(event) {
     const target = event ? event.currentTarget : currentActiveButton;
     if (!target) return;
@@ -57,8 +71,8 @@ function closeModal() {
     }
 }
 
+// 🚀 徹底修正：將所有天氣霧霾代碼 45, 48 轉換為最安全的 ☁️ 雲朵符號
 function getWeatherEmoji(code) {
-    // 修正：將容易變成方形亂碼的 🌫️ (霧) 統一替換為大家都能完美顯示的 ☁️ (雲朵)
     const table = { 0: "☀️", 1: "⛅", 2: "⛅", 3: "☁️", 45: "☁️", 48: "☁️", 51: "🌧️", 61: "🌧️", 95: "⛈️" };
     return table[code] || "🌤️";
 }
@@ -218,6 +232,9 @@ function init() {
         fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); 
     }
 
+    syncFromCloud();
+    renderExpenses(expenses.length === 0);
+
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
 
@@ -264,6 +281,7 @@ function init() {
         });
     }
 
+    // 🚀 核心修正：綁定所有 Modal，確保點擊背景 100% 成功關閉
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
             if (event.target === this) {
@@ -393,7 +411,7 @@ function deletePhoto() {
 /* =========================================
    ☁️ 記帳本邏輯
 ========================================= */
-const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec";
+const CLOUD_API_URL = "[https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec](https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec)";
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
 function openExpenseModal(event) {
@@ -524,6 +542,7 @@ function renderCategorySummary() {
 
 function renderExpenses(isLoading = false) {
     const listContainer = document.getElementById('expense-list');
+    if (!listContainer) return; 
     listContainer.innerHTML = '';
     
     if (isLoading) { 
@@ -566,22 +585,28 @@ function renderExpenses(isLoading = false) {
     }
 
     const total = timmyTotal + jjTotal;
-    document.getElementById('total-amount').innerText = total.toLocaleString();
-    document.getElementById('timmy-paid').innerText = timmyTotal.toLocaleString();
-    document.getElementById('jj-paid').innerText = jjTotal.toLocaleString();
-
+    const totalAmountEl = document.getElementById('total-amount');
+    const timmyPaidEl = document.getElementById('timmy-paid');
+    const jjPaidEl = document.getElementById('jj-paid');
     const settlementText = document.getElementById('settlement-text');
-    const diff = timmyTotal - jjTotal;
-    const halfDiff = Math.abs(diff) / 2;
 
-    if (diff > 0) {
-        settlementText.innerHTML = `⚠️ <b>ㄐㄐ</b> 需給 Timmy： <b>¥${halfDiff.toLocaleString()}</b>`;
-        settlementText.className = "settlement owe-timmy";
-    } else if (diff < 0) {
-        settlementText.innerHTML = `⚠️ <b>Timmy</b> 需給 ㄐㄐ： <b>¥${halfDiff.toLocaleString()}</b>`;
-        settlementText.className = "settlement owe-jj";
-    } else {
-        settlementText.innerHTML = `✅ 目前帳目完美平衡`;
-        settlementText.className = "settlement balanced";
+    if(totalAmountEl) totalAmountEl.innerText = total.toLocaleString();
+    if(timmyPaidEl) timmyPaidEl.innerText = timmyTotal.toLocaleString();
+    if(jjPaidEl) jjPaidEl.innerText = jjTotal.toLocaleString();
+
+    if(settlementText) {
+        const diff = timmyTotal - jjTotal;
+        const halfDiff = Math.abs(diff) / 2;
+
+        if (diff > 0) {
+            settlementText.innerHTML = `⚠️ <b>ㄐㄐ</b> 需給 Timmy： <b>¥${halfDiff.toLocaleString()}</b>`;
+            settlementText.className = "settlement owe-timmy";
+        } else if (diff < 0) {
+            settlementText.innerHTML = `⚠️ <b>Timmy</b> 需給 ㄐㄐ： <b>¥${halfDiff.toLocaleString()}</b>`;
+            settlementText.className = "settlement owe-jj";
+        } else {
+            settlementText.innerHTML = `✅ 目前帳目完美平衡`;
+            settlementText.className = "settlement balanced";
+        }
     }
 }
