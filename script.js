@@ -63,7 +63,7 @@ function updateFlightStatus() {
     }, 1200);
 }
 
-// 🌟 行程視窗開啟邏輯 (包含滾動條歸零修復)
+// 🌟 行程視窗開啟邏輯 (真正解決滾動條問題)
 function openModal(dayId, event) {
     const modal = document.getElementById('itineraryModal');
     const modalBody = document.getElementById('modalBody');
@@ -71,20 +71,23 @@ function openModal(dayId, event) {
     if (modal && sourceContent && event) {
         currentActiveButton = event.currentTarget;
         modalBody.innerHTML = sourceContent.innerHTML;
-
-        // 🌟 修復痛點：每次打開視窗時，強制將滾動條回到最頂部
-        const modalContent = modal.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.scrollTop = 0;
-        }
-
-        modal.style.display = 'flex';
+        
+        // 1. 先讓視窗出現，瀏覽器才能計算高度
+        modal.style.display = 'flex'; 
         setModalOrigin(event);
         void modal.offsetWidth; 
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
+
+        // 2. 🌟 關鍵修復：給瀏覽器 10 毫秒的反應時間後，強制將內部內容的滾動條歸零
+        setTimeout(() => {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.scrollTop = 0;
+            }
+        }, 10);
+
         updateItineraryPreview();
-        
         if(dayId === 'day1') setTimeout(updateFlightStatus, 600);
     }
 }
@@ -424,7 +427,13 @@ function openPhotoDiaryModal(event) {
     currentActiveButton = event.currentTarget;
     const modal = document.getElementById('photoDiaryModal');
     modal.style.display = 'flex'; setModalOrigin(event); void modal.offsetWidth;
-    modal.classList.add('open'); document.body.style.overflow = 'hidden'; renderPhotoDiary();
+    modal.classList.add('open'); document.body.style.overflow = 'hidden'; 
+    
+    // 🌟 保險起見：回憶錄也強制置頂
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.scrollTop = 0;
+    
+    renderPhotoDiary();
 }
 function closePhotoDiaryModal() {
     const modal = document.getElementById('photoDiaryModal');
@@ -469,7 +478,17 @@ function deletePhoto() { if(confirm("確定要刪除這張照片嗎？")) { dele
 const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec";
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
-function openExpenseModal(event) { currentActiveButton = event.currentTarget; const modal = document.getElementById('expenseModal'); modal.style.display = 'flex'; setModalOrigin(event); void modal.offsetWidth; modal.classList.add('open'); document.body.style.overflow = 'hidden'; renderExpenses(expenses.length === 0); syncFromCloud(); }
+function openExpenseModal(event) { 
+    currentActiveButton = event.currentTarget; 
+    const modal = document.getElementById('expenseModal'); 
+    modal.style.display = 'flex'; 
+    setModalOrigin(event); 
+    void modal.offsetWidth; 
+    modal.classList.add('open'); 
+    document.body.style.overflow = 'hidden'; 
+    renderExpenses(expenses.length === 0); 
+    syncFromCloud(); 
+}
 function closeExpenseModal() { const modal = document.getElementById('expenseModal'); if (modal) { setModalOrigin(); modal.classList.remove('open'); setTimeout(() => { if (!modal.classList.contains('open')) { modal.style.display = 'none'; currentActiveButton = null; } }, 300); document.body.style.overflow = ''; } }
 async function syncFromCloud() { try { const response = await fetch(CLOUD_API_URL + "?t=" + new Date().getTime()); const data = await response.json(); if (Array.isArray(data)) { expenses = data; localStorage.setItem('travelExpenses', JSON.stringify(expenses)); renderExpenses(); renderCategorySummary(); } } catch (error) { console.error("雲端同步失敗", error); } }
 async function addExpense() {
