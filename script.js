@@ -1,6 +1,6 @@
 let currentActiveButton = null;
 
-// 導覽列分頁切換
+// 🚀 底部導覽列分頁切換與「動態膠囊定位」
 function switchTab(tabId) {
     document.querySelectorAll('.tab-view').forEach(view => {
         view.classList.remove('active');
@@ -10,7 +10,16 @@ function switchTab(tabId) {
     });
 
     document.getElementById('view-' + tabId).classList.add('active');
-    document.getElementById('btn-' + tabId).classList.add('active');
+    const activeBtn = document.getElementById('btn-' + tabId);
+    activeBtn.classList.add('active');
+    
+    // 讓灰色膠囊滑動到指定按鈕的後方
+    const indicator = document.getElementById('tab-indicator');
+    if (indicator && activeBtn) {
+        indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+        indicator.style.width = `${activeBtn.offsetWidth}px`;
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -71,7 +80,6 @@ function closeModal() {
     }
 }
 
-// 🚀 徹底修正：將所有天氣霧霾代碼 45, 48 轉換為最安全的 ☁️ 雲朵符號
 function getWeatherEmoji(code) {
     const table = { 0: "☀️", 1: "⛅", 2: "⛅", 3: "☁️", 45: "☁️", 48: "☁️", 51: "🌧️", 61: "🌧️", 95: "⛈️" };
     return table[code] || "🌤️";
@@ -234,9 +242,11 @@ function init() {
 
     syncFromCloud();
     renderExpenses(expenses.length === 0);
-
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
+    
+    // 初始化確保膠囊定位在首頁
+    setTimeout(() => switchTab('home'), 100);
 
     const toggleArea = document.querySelector('.payer-toggle');
     const slider = document.querySelector('.toggle-slider');
@@ -281,7 +291,6 @@ function init() {
         });
     }
 
-    // 🚀 核心修正：綁定所有 Modal，確保點擊背景 100% 成功關閉
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
             if (event.target === this) {
@@ -292,9 +301,65 @@ function init() {
             }
         });
     });
+
+    // 🚀 全域滑動偵測 (支援左右滑動切換分頁)
+    const tabsList = ['home', 'expense', 'exchange'];
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+
+    document.addEventListener('touchstart', e => {
+        if (e.touches.length > 1) return;
+        const openModal = document.querySelector('.modal.open');
+        if (openModal) return;
+        // 避免與其他橫向滑動元件衝突
+        if (e.target.closest('.hourly-forecast') || e.target.closest('.photo-grid') || e.target.closest('.payer-toggle') || e.target.closest('.expense-list-container') || e.target.closest('.nav-container')) return;
+        
+        swipeStartX = e.changedTouches[0].clientX;
+        swipeStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+        if (e.changedTouches.length > 1) return;
+        const openModal = document.querySelector('.modal.open');
+        if (openModal) return;
+        if (e.target.closest('.hourly-forecast') || e.target.closest('.photo-grid') || e.target.closest('.payer-toggle') || e.target.closest('.expense-list-container') || e.target.closest('.nav-container')) return;
+
+        let swipeEndX = e.changedTouches[0].clientX;
+        let swipeEndY = e.changedTouches[0].clientY;
+        let deltaX = swipeEndX - swipeStartX;
+        let deltaY = swipeEndY - swipeStartY;
+
+        // 判斷橫向滑動 (X軸移動大於50px，且Y軸移動小於100px，確保是水平滑動)
+        if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
+            let activeBtn = document.querySelector('.tab-btn.active');
+            if(!activeBtn) return;
+            let currentTabId = activeBtn.id.replace('btn-', '');
+            let currentIndex = tabsList.indexOf(currentTabId);
+            
+            if (deltaX < 0 && currentIndex < tabsList.length - 1) { 
+                // 向左滑動 -> 切換到下一頁
+                switchTab(tabsList[currentIndex + 1]);
+            } else if (deltaX > 0 && currentIndex > 0) { 
+                // 向右滑動 -> 切換到上一頁
+                switchTab(tabsList[currentIndex - 1]);
+            }
+        }
+    }, { passive: true });
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// 視窗大小改變時，重新定位膠囊指示器
+window.addEventListener('resize', () => {
+    const activeBtn = document.querySelector('.tab-btn.active');
+    if (activeBtn) {
+        const indicator = document.getElementById('tab-indicator');
+        if(indicator) {
+            indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+            indicator.style.width = `${activeBtn.offsetWidth}px`;
+        }
+    }
+});
 
 /* =========================================
    📷 旅程回憶錄邏輯 (Modal 彈出視窗)
@@ -411,7 +476,7 @@ function deletePhoto() {
 /* =========================================
    ☁️ 記帳本邏輯
 ========================================= */
-const CLOUD_API_URL = "[https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec](https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec)";
+const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec";
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 
 function openExpenseModal(event) {
