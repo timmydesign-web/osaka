@@ -45,16 +45,14 @@ function setModalOrigin(event) {
 // ✈️ 航班即時動態追蹤 (模擬即時連線)
 // =========================================
 function updateFlightStatus() {
-    // 鎖定在彈出視窗內的航班卡片
     const badge = document.querySelector('#modalBody #flight-status-badge');
     if(!badge) return;
     
     badge.innerText = "🔄 同步中...";
     badge.className = "flight-status";
     
-    // 模擬連線延遲後回傳結果
     setTimeout(() => {
-        const isOnTime = Math.random() > 0.15; // 85% 機率準點
+        const isOnTime = Math.random() > 0.15; 
         if (isOnTime) {
             badge.innerText = "✅ 準點 (抵達 T1)";
             badge.className = "flight-status on-time";
@@ -65,6 +63,7 @@ function updateFlightStatus() {
     }, 1200);
 }
 
+// 🌟 行程視窗開啟邏輯 (包含滾動條歸零修復)
 function openModal(dayId, event) {
     const modal = document.getElementById('itineraryModal');
     const modalBody = document.getElementById('modalBody');
@@ -72,6 +71,13 @@ function openModal(dayId, event) {
     if (modal && sourceContent && event) {
         currentActiveButton = event.currentTarget;
         modalBody.innerHTML = sourceContent.innerHTML;
+
+        // 🌟 修復痛點：每次打開視窗時，強制將滾動條回到最頂部
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+            modalContent.scrollTop = 0;
+        }
+
         modal.style.display = 'flex';
         setModalOrigin(event);
         void modal.offsetWidth; 
@@ -79,7 +85,6 @@ function openModal(dayId, event) {
         document.body.style.overflow = 'hidden';
         updateItineraryPreview();
         
-        // 如果開啟的是 Day 1，自動觸發航班更新
         if(dayId === 'day1') setTimeout(updateFlightStatus, 600);
     }
 }
@@ -282,17 +287,15 @@ function calculateExchange() {
 }
 
 function init() {
-    // 🌟 載入深色模式設定
     const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', savedTheme);
     const toggleBtn = document.getElementById('theme-toggle');
     if(toggleBtn) toggleBtn.innerText = savedTheme === 'dark' ? '☀️' : '🌙';
 
-    // 🌟 註冊 PWA Service Worker (支援離線讀取)
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('✅ PWA 離線支援已啟動 (Service Worker Registered)'))
+                .then(reg => console.log('✅ PWA 離線支援已啟動'))
                 .catch(err => console.log('❌ PWA 註冊失敗', err));
         });
     }
