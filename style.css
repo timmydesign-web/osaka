@@ -1,4 +1,4 @@
-@import url('[https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap)');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@600;700&family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
 
 *, *::before, *::after { 
     box-sizing: border-box; 
@@ -9,10 +9,12 @@
     --c1: #ff9a9e; 
     --c2: #fad0c4; 
     --c3: #a1c4fd;
+    /* 🚀 恢復：將花園明朝體設為絕對優先的最頂級標題字體 */
     --title-font: 'HanaMinA', 'HanaMinB', 'Hanazono Mincho', '花園明朝A', '花園明朝B', 'Noto Serif JP', serif;
 }
 
 body { 
+    /* 🚀 恢復：原本乾淨俐落的無襯線內文字體設定 */
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Noto Sans TC", sans-serif;
     margin: 0; 
     padding: 0; 
@@ -117,9 +119,7 @@ header h1 { margin: 0; font-size: 24px; }
 .trig-sub { font-size: 11px; color: #86868b; font-weight: 600; margin-top: 2px; }
 .trig-right { font-size: 13px; font-weight: 600; color: var(--ios-blue); background: rgba(0, 113, 227, 0.1); padding: 6px 12px; border-radius: 12px; }
 
-/* =========================================
-   🚀 底部懸浮導覽列 (成功復原！)
-========================================= */
+/* 底部懸浮膠囊導覽列 */
 .bottom-tab-bar {
     position: fixed;
     bottom: max(25px, env(safe-area-inset-bottom));
@@ -154,11 +154,7 @@ header h1 { margin: 0; font-size: 24px; }
     -webkit-tap-highlight-color: transparent;
 }
 
-.tab-btn.active {
-    background: rgba(0, 0, 0, 0.05);
-    color: #1d1d1f;
-}
-
+.tab-btn.active { background: rgba(0, 0, 0, 0.05); color: #1d1d1f; }
 .tab-icon { font-size: 22px; line-height: 1; }
 .tab-label { font-size: 11px; font-weight: 700; line-height: 1; }
 
@@ -207,7 +203,9 @@ header h1 { margin: 0; font-size: 24px; }
 .glass-btn.taxi { background: #fffbef !important; border-color: #fce48b !important; color: #b08500 !important; }
 .glass-btn.home-btn { background: #f2f2f7 !important; border-color: #e5e5ea !important; color: #1d1d1f !important; margin-top: 20px; }
 
-/* 💰 記帳本分頁排版 */
+/* =========================================
+   💰 記帳本分頁排版
+========================================= */
 .expense-modal-content { background: #f2f2f7; padding-bottom: 40px; }
 .ios-modal-header h2 { margin-bottom: 20px; font-size: 22px;}
 
@@ -274,7 +272,9 @@ header h1 { margin: 0; font-size: 24px; }
 .cat-amount { width: 55px; text-align: right; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; }
 .exp-cat-tag { font-size: 10px; background: #f2f2f7; padding: 2px 6px; border-radius: 6px; margin-right: 6px; color: #8e8e93; }
 
-/* 📷 旅程回憶錄 (相片牆 Modal) */
+/* =========================================
+   📷 旅程回憶錄 (相片牆 Modal)
+========================================= */
 .photo-diary-modal-content { background: #f2f2f7; }
 .photo-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding-bottom: 15px; }
 
