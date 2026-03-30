@@ -1,6 +1,5 @@
 let currentActiveButton = null;
 
-// 🚀 導覽列分頁切換
 function switchTab(tabId) {
     document.querySelectorAll('.tab-view').forEach(view => {
         view.classList.remove('active');
@@ -212,6 +211,52 @@ function updateItineraryPreview() {
     }
 }
 
+// =========================================
+// 💱 匯率與刷卡試算邏輯 (全新)
+// =========================================
+let currentJpyToTwd = 0.2100; 
+
+async function fetchExchangeRate() {
+    const rateElement = document.getElementById('current-rate');
+    const timeElement = document.getElementById('rate-update-time');
+    
+    try {
+        const response = await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/jpy.json');
+        const data = await response.json();
+        
+        if (data && data.jpy && data.jpy.twd) {
+            currentJpyToTwd = data.jpy.twd;
+            rateElement.innerText = currentJpyToTwd.toFixed(4);
+            
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            timeElement.innerText = `最後更新: ${hours}:${minutes}`;
+            
+            calculateExchange();
+        }
+    } catch (error) {
+        console.error("無法抓取即時匯率，使用預設值", error);
+        rateElement.innerText = currentJpyToTwd.toFixed(4) + " (預設)";
+        timeElement.innerText = "最後更新: 離線模式";
+    }
+}
+
+function calculateExchange() {
+    const jpyInput = document.getElementById('jpy-input').value;
+    const jpyAmount = parseFloat(jpyInput) || 0;
+    
+    const twdCash = jpyAmount * currentJpyToTwd;
+    // Visa 普遍加上 1.5% 手續費
+    const twdVisa = twdCash * 1.015; 
+    // Mastercard 通常匯率微優，我們模擬便宜一點點 (大約省千分之五) 加上 1.5% 手續費的結果
+    const twdMaster = twdCash * 1.0145; 
+
+    document.getElementById('twd-cash').innerText = `NT$ ${Math.round(twdCash).toLocaleString()}`;
+    document.getElementById('twd-visa').innerText = `NT$ ${Math.round(twdVisa).toLocaleString()}`;
+    document.getElementById('twd-master').innerText = `NT$ ${Math.round(twdMaster).toLocaleString()}`;
+}
+
 function init() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -241,16 +286,14 @@ function init() {
 
     syncFromCloud();
     renderExpenses(expenses.length === 0);
-
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
     
-    // 初始化導覽列
+    // 🚀 初始化抓取匯率
+    fetchExchangeRate();
+
     setTimeout(() => switchTab('home'), 100);
 
-    // =========================================
-    // 💰 記帳本 Toggle 滑動功能
-    // =========================================
     const toggleArea = document.querySelector('.payer-toggle');
     const slider = document.querySelector('.toggle-slider');
     
@@ -294,9 +337,6 @@ function init() {
         });
     }
 
-    // =========================================
-    // 🚀 導覽列專屬：手指追蹤滑動切換 (Tab Bar Drag)
-    // =========================================
     const tabBar = document.querySelector('.bottom-tab-bar');
     const tabIndicator = document.getElementById('tab-indicator');
     const tabBtns = document.querySelectorAll('.tab-btn');
@@ -308,17 +348,11 @@ function init() {
         let initialIndicatorX = 0;
 
         tabBar.addEventListener('touchstart', e => {
-            // 如果畫面上打開了任何浮動視窗，就不要觸發導覽列滑動
             if (document.querySelector('.modal.open')) return;
-            
             isTabDragging = true; 
             tabStartX = e.changedTouches[0].clientX;
-            
-            // 抓取當下膠囊的位置
             const activeBtn = document.querySelector('.tab-btn.active');
             initialIndicatorX = activeBtn ? activeBtn.offsetLeft : 0;
-            
-            // 關閉過場動畫，讓膠囊跟著手指無延遲移動
             tabIndicator.style.transition = 'none';
         }, { passive: true });
 
@@ -328,16 +362,12 @@ function init() {
             let diff = currentX - tabStartX;
             let newTranslate = initialIndicatorX + diff;
             
-            // 邊界限制設定 (不要讓膠囊滑出框外)
             const minX = 0;
             const maxX = tabBar.offsetWidth - tabIndicator.offsetWidth;
             if (newTranslate < minX) newTranslate = minX;
             if (newTranslate > maxX) newTranslate = maxX;
             
-            // 手指滑到哪，膠囊就滑到哪
             tabIndicator.style.transform = `translateX(${newTranslate}px)`;
-            
-            // 阻止滑動時螢幕一起捲動
             if (Math.abs(diff) > 5 && e.cancelable) e.preventDefault();
         }, { passive: false });
 
@@ -347,10 +377,8 @@ function init() {
             let currentX = e.changedTouches[0].clientX;
             let diff = currentX - tabStartX;
             
-            // 恢復過場動畫
             tabIndicator.style.transition = ''; 
             
-            // 若滑動距離超過一定像素，判定放開時最靠近的按鈕
             if (Math.abs(diff) > 10) {
                 let indicatorCenter = initialIndicatorX + diff + (tabIndicator.offsetWidth / 2);
                 let closestTab = tabsList[0];
@@ -364,10 +392,8 @@ function init() {
                         closestTab = tabsList[index];
                     }
                 });
-                // 切換到最接近的分頁
                 switchTab(closestTab);
             } else {
-                // 滑動距離不夠，將膠囊彈回原本的按鈕
                 const activeBtn = document.querySelector('.tab-btn.active');
                 if (activeBtn) {
                     tabIndicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
@@ -376,7 +402,6 @@ function init() {
         });
     }
 
-    // 關閉視窗邏輯
     document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', function(event) {
             if (event.target === this) {
@@ -391,7 +416,6 @@ function init() {
 
 document.addEventListener('DOMContentLoaded', init);
 
-// 視窗大小改變時，重新對齊膠囊位置
 window.addEventListener('resize', () => {
     const activeBtn = document.querySelector('.tab-btn.active');
     if (activeBtn) {
