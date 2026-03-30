@@ -16,6 +16,7 @@
 </head>
 <body>
     <header>
+        <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
         <h1>大阪京都旅行</h1>
         <p class="subtitle">8/10~8/17 | 8天7夜</p>
     </header>
@@ -163,7 +164,6 @@
                     </div>
                     <span class="res-amount" id="twd-cash">NT$ 0</span>
                 </div>
-                
                 <div class="result-card mastercard">
                     <div class="res-title-row">
                         <span class="res-icon">💳</span>
@@ -174,7 +174,6 @@
                     </div>
                     <span class="res-amount" id="twd-master">NT$ 0</span>
                 </div>
-
                 <div class="result-card visa">
                     <div class="res-title-row">
                         <span class="res-icon">💳</span>
@@ -238,34 +237,59 @@
         <div id="content-day1">
             <div class="ios-modal-header"><h2>Day 1: 台北 ✈️ 大阪</h2></div>
             <div class="itinerary-card">
-                <div class="time-item type-sight" data-time="19:00">
-                    <span class="time">19:00</span>
+                <div class="time-item type-sight" data-time="14:20">
+                    <span class="time">14:20</span>
                     <div class="item-content">
-                        <span class="item-title">抵達關西機場 (KIX) - IT212</span>
+                        <span class="item-title">搭乘台灣虎航 IT212</span>
+                        <span class="transit-detail">✈️ 準備起飛，前往關西機場</span>
+                        
+                        <div class="flight-tracker-card" onclick="updateFlightStatus()">
+                            <div class="flight-header">
+                                <span class="flight-no">✈️ 台灣虎航 IT212</span>
+                                <span class="flight-status" id="flight-status-badge">🔄 點擊查動態</span>
+                            </div>
+                            <div class="flight-route">
+                                <div class="route-point">
+                                    <span class="r-code">TPE</span>
+                                    <span class="r-time">14:20</span>
+                                    <span class="r-term">T1</span>
+                                </div>
+                                <div class="route-line">
+                                    <span class="plane-icon">✈</span>
+                                </div>
+                                <div class="route-point">
+                                    <span class="r-code">KIX</span>
+                                    <span class="r-time">18:05</span>
+                                    <span class="r-term">T1</span>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
-                <div class="time-item type-sight" data-time="20:10">
-                    <span class="time">20:10</span>
+                <div class="time-item type-sight" data-time="18:05">
+                    <span class="time">18:05</span>
                     <div class="item-content">
-                        <span class="item-title">入境與提領行李 (預估)</span>
+                        <span class="item-title">抵達關西機場 (KIX)</span>
+                        <span class="transit-detail">🛄 入境與提領行李 (預估 1 小時)</span>
                     </div>
                 </div>
-                <div class="time-item type-sight" data-time="20:35">
-                    <span class="time">20:35</span>
+                <div class="time-item type-sight" data-time="19:35">
+                    <span class="time">19:35</span>
                     <div class="item-content">
-                        <span class="item-title">搭乘南海電鐵 Rapi:t β 68 號</span>
+                        <span class="item-title">搭乘南海電鐵 Rapi:t</span>
                         <span class="transit-detail">🚆 南海特急 (關西機場 ➔ 南海難波) | 39 分鐘</span>
                     </div>
                 </div>
-                <div class="time-item type-sight" data-time="21:14">
-                    <span class="time">21:14</span>
+                <div class="time-item type-sight" data-time="20:14">
+                    <span class="time">20:14</span>
                     <div class="item-content">
                         <span class="item-title">抵達「南海難波站」</span>
                         <span class="transit-detail">🚶 步行至飯店約 8 分鐘</span>
                     </div>
                 </div>
-                <div class="time-item type-sight" data-time="21:30">
-                    <span class="time">21:30</span>
+                <div class="time-item type-sight" data-time="20:30">
+                    <span class="time">20:30</span>
                     <div class="item-content">
                         <span class="item-title">入住 艾思利德酒店難波東</span>
                     </div>
