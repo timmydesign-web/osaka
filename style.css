@@ -452,3 +452,70 @@ footer { flex-shrink: 0; text-align: center; padding: 5px 0 max(15px, env(safe-a
 [data-theme="dark"] .flight-tracker-card { background: #2c2c2e; border-color: rgba(255,255,255,0.05); }
 [data-theme="dark"] .flight-no, [data-theme="dark"] .r-time { color: #f5f5f7; }
 [data-theme="dark"] .plane-icon { background: #2c2c2e; }
+
+/* =========================================
+   🍳 預約提醒系統樣式
+========================================= */
+.res-alert-banner {
+    position: fixed;
+    top: max(75px, env(safe-area-inset-top) + 55px);
+    left: 5%;
+    width: 90%;
+    max-width: 400px;
+    background: #ff3b30; /* 警示紅 */
+    border-radius: 18px;
+    z-index: 1000;
+    box-shadow: 0 12px 30px rgba(255, 59, 48, 0.3);
+    animation: alertBounce 1s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
+    cursor: pointer;
+}
+
+@keyframes alertBounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-5px); }
+}
+
+.res-alert-content {
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.res-alert-icon { font-size: 24px; }
+.res-alert-text { flex: 1; display: flex; flex-direction: column; }
+.res-alert-title { color: #fff; font-weight: 800; font-size: 14px; }
+.res-alert-sub { color: rgba(255,255,255,0.9); font-size: 11px; font-weight: 500; }
+.res-alert-arrow { color: #fff; font-weight: 700; opacity: 0.7; }
+
+/* Day 6 內部的預約卡片 */
+.reservation-tracker-card {
+    background: linear-gradient(135deg, #fff5f5 0%, #fff 100%);
+    border: 2px solid #ff3b30;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 20px rgba(255, 59, 48, 0.1);
+    cursor: pointer;
+}
+
+.res-tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.res-tag { background: #ff3b30; color: #fff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+.res-status-text { font-size: 11px; font-weight: 700; color: #ff3b30; }
+.res-status-text.active { color: #34c759; animation: pulse-green 1.5s infinite; }
+
+@keyframes pulse-green {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.res-tracker-main { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.res-name { font-size: 17px; font-weight: 800; color: #1d1d1f; }
+.res-detail { font-size: 12px; color: #86868b; font-weight: 500; }
+.res-btn-mini { font-size: 13px; font-weight: 700; color: #ff3b30; text-align: right; }
+
+/* 深色模式適配 */
+[data-theme="dark"] .reservation-tracker-card { background: #2c0b0b; border-color: #ff453a; }
+[data-theme="dark"] .res-name { color: #fff; }
+[data-theme="dark"] .res-btn-mini, [data-theme="dark"] .res-status-text { color: #ff453a; }
