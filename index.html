@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
+    <header id="main-header">
         <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()">🌙</button>
         <h1>大阪京都旅行</h1>
         <p class="subtitle">8/10~8/17 | 8天7夜</p>
@@ -34,8 +34,9 @@
 
     <main>
         <div id="view-home" class="tab-view active">
-            <nav>
-                <div class="nav-container layout-width">
+            
+            <div id="day-nav-wrapper" class="sticky-nav-wrapper">
+                <nav class="nav-container layout-width">
                     <button class="nav-btn" onclick="openModal('day1', event)">Day 1</button>
                     <button class="nav-btn" onclick="openModal('day2', event)">Day 2</button>
                     <button class="nav-btn" onclick="openModal('day3', event)">Day 3</button>
@@ -44,20 +45,41 @@
                     <button class="nav-btn" onclick="openModal('day6', event)">Day 6</button>
                     <button class="nav-btn" onclick="openModal('day7', event)">Day 7</button>
                     <button class="nav-btn" onclick="openModal('day8', event)">Day 8</button>
-                </div>
-            </nav>
+                </nav>
+            </div>
 
             <section class="weather-widget layout-width">
-                <div class="weather-header">
-                    <div class="weather-left">
-                        <h2 class="city-name" id="location-name">📍 定位中...</h2>
-                        <span class="weather-subtitle serif">未來 24 小時預報</span>
+                <div id="weather-skeleton">
+                    <div class="weather-header">
+                        <div class="weather-left">
+                            <div class="skeleton skeleton-text" style="width: 120px; height: 22px;"></div>
+                            <div class="skeleton skeleton-text" style="width: 80px; height: 12px; margin-top: 6px;"></div>
+                        </div>
+                        <div class="weather-right">
+                            <div class="skeleton skeleton-text" style="width: 60px; height: 26px;"></div>
+                        </div>
                     </div>
-                    <div class="weather-right">
-                        <h3 id="current-weather-desc" class="serif">同步中...</h3>
+                    <div class="hourly-forecast" style="overflow: hidden; gap: 18px; padding-bottom: 5px;">
+                        <div class="skeleton" style="width: 40px; height: 75px; border-radius: 20px; flex-shrink: 0;"></div>
+                        <div class="skeleton" style="width: 40px; height: 75px; border-radius: 20px; flex-shrink: 0;"></div>
+                        <div class="skeleton" style="width: 40px; height: 75px; border-radius: 20px; flex-shrink: 0;"></div>
+                        <div class="skeleton" style="width: 40px; height: 75px; border-radius: 20px; flex-shrink: 0;"></div>
+                        <div class="skeleton" style="width: 40px; height: 75px; border-radius: 20px; flex-shrink: 0;"></div>
                     </div>
                 </div>
-                <div class="hourly-forecast" id="hourly-forecast"></div>
+
+                <div id="weather-content" style="display: none;">
+                    <div class="weather-header">
+                        <div class="weather-left">
+                            <h2 class="city-name" id="location-name">📍 定位中...</h2>
+                            <span class="weather-subtitle serif">未來 24 小時預報</span>
+                        </div>
+                        <div class="weather-right">
+                            <h3 id="current-weather-desc" class="serif">同步中...</h3>
+                        </div>
+                    </div>
+                    <div class="hourly-forecast" id="hourly-forecast"></div>
+                </div>
             </section>
 
             <section class="hero layout-width">
@@ -222,7 +244,15 @@
     <div id="itineraryModal" class="modal" style="display: none;">
         <div class="modal-content layout-width">
             <div class="close-btn" onclick="closeModal()">×</div>
-            <div id="modalBody"></div>
+            
+            <div class="modal-slider-container">
+                <div id="modalBody"></div>
+            </div>
+            
+            <div class="modal-bottom-nav">
+                <button id="modal-prev-btn" class="modal-nav-btn" onclick="slideModalDay(-1)">← 前一天</button>
+                <button id="modal-next-btn" class="modal-nav-btn" onclick="slideModalDay(1)">下一天 →</button>
+            </div>
         </div>
     </div>
 
