@@ -1,4 +1,5 @@
 let currentActiveButton = null;
+let currentOpenDayNum = 1; // 記錄目前打開的行程天數
 
 // =========================================
 // 🌙 深色模式邏輯
@@ -54,6 +55,7 @@ function checkReservationReminder() {
     const jstMin = jstNow.getMinutes();
 
     const isTargetDay = (jstYear === 2026 && jstMonth === 8 && jstDate === 15);
+    
     const banner = document.getElementById('reservation-alert-banner');
     const modalStatus = document.querySelector('#modalBody #kichikichi-status');
 
@@ -98,14 +100,68 @@ function updateFlightStatus() {
     }, 1200);
 }
 
-// 🌟 視窗開啟邏輯
+// =========================================
+// 🌟 視窗與內部無縫滑動邏輯 (Micro-interactions)
+// =========================================
+function updateModalNav() {
+    const prevBtn = document.getElementById('modal-prev-btn');
+    const nextBtn = document.getElementById('modal-next-btn');
+    if(prevBtn) prevBtn.disabled = currentOpenDayNum <= 1;
+    if(nextBtn) nextBtn.disabled = currentOpenDayNum >= 8;
+}
+
+function slideModalDay(direction) {
+    let newDayNum = currentOpenDayNum + direction;
+    if (newDayNum < 1 || newDayNum > 8) return;
+
+    const modalBody = document.getElementById('modalBody');
+    const sourceContent = document.getElementById('content-day' + newDayNum);
+
+    // 1. 往左右淡出
+    modalBody.style.transform = `translateX(${direction * -30}px)`;
+    modalBody.style.opacity = '0';
+
+    setTimeout(() => {
+        // 2. 瞬間替換內容與更新按鈕狀態
+        currentOpenDayNum = newDayNum;
+        modalBody.innerHTML = sourceContent.innerHTML;
+        updateModalNav();
+        
+        // 3. 準備從反方向滑入
+        modalBody.style.transition = 'none';
+        modalBody.style.transform = `translateX(${direction * 30}px)`;
+        void modalBody.offsetWidth; // 強制重繪
+
+        // 4. 正式滑入淡入
+        modalBody.style.transition = 'transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.25s ease';
+        modalBody.style.transform = 'translateX(0)';
+        modalBody.style.opacity = '1';
+
+        // 滾動條歸零
+        const modalContent = document.querySelector('.modal-content');
+        if (modalContent) modalContent.scrollTop = 0;
+
+        updateItineraryPreview();
+        checkReservationReminder(); 
+        if(newDayNum === 1) setTimeout(updateFlightStatus, 600);
+    }, 200); // 200ms 對應 fade out 的轉場時間
+}
+
 function openModal(dayId, event) {
+    currentOpenDayNum = parseInt(dayId.replace('day', ''));
     const modal = document.getElementById('itineraryModal');
     const modalBody = document.getElementById('modalBody');
     const sourceContent = document.getElementById('content-' + dayId);
+    
     if (modal && sourceContent && event) {
         currentActiveButton = event.currentTarget;
+        
+        // 重置動畫狀態
+        modalBody.style.transition = 'none';
+        modalBody.style.transform = 'translateX(0)';
+        modalBody.style.opacity = '1';
         modalBody.innerHTML = sourceContent.innerHTML;
+        updateModalNav();
         
         modal.style.display = 'flex'; 
         setModalOrigin(event);
@@ -154,28 +210,47 @@ function getWeatherEmoji(code) {
 }
 
 async function fetchWeather(lat, lon, cityName) {
+    const skeleton = document.getElementById('weather-skeleton');
+    const content = document.getElementById('weather-content');
     const hourlyContainer = document.getElementById('hourly-forecast');
     const titleDesc = document.getElementById('current-weather-desc');
     const locationName = document.getElementById('location-name');
+    
+    // 確保一開始顯示骨架
+    if(skeleton) skeleton.style.display = 'block';
+    if(content) content.style.display = 'none';
+
     try {
         locationName.innerHTML = `📍 ${cityName}`;
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode,precipitation_probability&timezone=auto&forecast_days=2`);
         const data = await res.json();
-        titleDesc.innerHTML = `${getWeatherEmoji(data.current_weather.weathercode)} ${Math.round(data.current_weather.temperature)}°C`;
+        
+        // 加入些微延遲，讓骨架動效稍微閃爍展示專業感
+        setTimeout(() => {
+            titleDesc.innerHTML = `${getWeatherEmoji(data.current_weather.weathercode)} ${Math.round(data.current_weather.temperature)}°C`;
+            const nowHour = new Date().getHours();
+            let startIndex = data.hourly.time.findIndex(t => parseInt(t.substring(11, 13)) === nowHour);
+            if (startIndex === -1) startIndex = 0;
 
-        const nowHour = new Date().getHours();
-        let startIndex = data.hourly.time.findIndex(t => parseInt(t.substring(11, 13)) === nowHour);
-        if (startIndex === -1) startIndex = 0;
+            let html = '';
+            for (let i = startIndex; i < startIndex + 24; i++) {
+                if (!data.hourly.time[i]) break;
+                const label = (i === startIndex) ? "現在" : data.hourly.time[i].substring(11, 16);
+                const precip = data.hourly.precipitation_probability[i] || 0;
+                html += `<div class="hourly-item"><span class="h-time serif">${label}</span><span class="h-icon">${getWeatherEmoji(data.hourly.weathercode[i])}</span><span class="h-temp serif">${Math.round(data.hourly.temperature_2m[i])}°</span><span class="h-precip">${precip}%</span></div>`;
+            }
+            hourlyContainer.innerHTML = html;
+            
+            // 隱藏骨架，顯示真實內容
+            if(skeleton) skeleton.style.display = 'none';
+            if(content) content.style.display = 'block';
+        }, 500);
 
-        let html = '';
-        for (let i = startIndex; i < startIndex + 24; i++) {
-            if (!data.hourly.time[i]) break;
-            const label = (i === startIndex) ? "現在" : data.hourly.time[i].substring(11, 16);
-            const precip = data.hourly.precipitation_probability[i] || 0;
-            html += `<div class="hourly-item"><span class="h-time serif">${label}</span><span class="h-icon">${getWeatherEmoji(data.hourly.weathercode[i])}</span><span class="h-temp serif">${Math.round(data.hourly.temperature_2m[i])}°</span><span class="h-precip">${precip}%</span></div>`;
-        }
-        hourlyContainer.innerHTML = html;
-    } catch (e) { titleDesc.innerHTML = "同步中"; }
+    } catch (e) { 
+        titleDesc.innerHTML = "離線模式"; 
+        if(skeleton) skeleton.style.display = 'none';
+        if(content) content.style.display = 'block';
+    }
 }
 
 function updateItineraryPreview() {
@@ -258,10 +333,7 @@ function updateItineraryPreview() {
     }
 }
 
-// =========================================
-// 💱 匯率與真實刷卡試算 (升級版)
-// =========================================
-// 預設為較接近真實行情的 0.202 (若斷網時使用)
+// 💱 匯率邏輯
 let baseJpyToTwd = 0.2020; 
 let displayRate = 0.2020;
 
@@ -270,31 +342,22 @@ async function fetchExchangeRate() {
     const timeElement = document.getElementById('rate-update-time');
     
     try {
-        // 使用更穩定的匯率 API
         const response = await fetch('https://open.er-api.com/v6/latest/JPY');
         const data = await response.json();
         
         if (data && data.rates && data.rates.TWD) {
-            // API 抓到的是純市場中價
             const rawRate = data.rates.TWD;
-            
-            // 🌟 模擬銀行牌告溢價 (約加上 0.5% 作為發卡行的結匯基準)
             baseJpyToTwd = rawRate * 1.005; 
-            
-            // 為了版面美觀，四捨五入到小數點後四位
             displayRate = parseFloat(baseJpyToTwd.toFixed(4));
-            
             rateElement.innerText = displayRate;
             
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
             timeElement.innerText = `最後更新: ${hours}:${minutes} (含估算溢價)`;
-            
             calculateExchange();
         }
     } catch (error) {
-        console.error("無法抓取即時匯率，使用預設值", error);
         rateElement.innerText = displayRate.toFixed(4) + " (離線預估)";
         timeElement.innerText = "最後更新: 離線模式";
         calculateExchange();
@@ -304,15 +367,8 @@ async function fetchExchangeRate() {
 function calculateExchange() {
     const jpyInput = document.getElementById('jpy-input').value;
     const jpyAmount = parseFloat(jpyInput) || 0;
-    
-    // 💵 基礎現金匯率換算 (以包含溢價的 baseJpyToTwd 計算)
     const twdCash = jpyAmount * baseJpyToTwd;
-    
-    // 💳 Visa 預估：加上 1.5% 海外手續費
     const twdVisa = twdCash * 1.015; 
-    
-    // 💳 Mastercard 預估：通常結匯率比 Visa 便宜一點點 (我們假設省 0.15%)
-    // 等同於 (基礎匯率 * 0.9985) * 1.015
     const twdMaster = (twdCash * 0.9985) * 1.015; 
 
     document.getElementById('twd-cash').innerText = `NT$ ${Math.round(twdCash).toLocaleString()}`;
@@ -321,7 +377,7 @@ function calculateExchange() {
 }
 
 // =========================================
-// 🚀 初始化與手勢監聽
+// 🚀 初始化與全域監聽
 // =========================================
 function init() {
     const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -357,14 +413,30 @@ function init() {
     renderExpenses(expenses.length === 0);
     updateItineraryPreview();
     setInterval(updateItineraryPreview, 30000); 
-    
-    // 啟動更準確的匯率抓取
     fetchExchangeRate();
 
     checkReservationReminder();
     setInterval(checkReservationReminder, 30000); 
 
     setTimeout(() => switchTab('home'), 100);
+
+    // 🌟 Scroll Spy 滾動毛玻璃效果監聽
+    window.addEventListener('scroll', () => {
+        const header = document.getElementById('main-header');
+        const dayNav = document.getElementById('day-nav-wrapper');
+        const scrollY = window.scrollY;
+
+        if (scrollY > 10) {
+            if(header) header.classList.add('scrolled');
+            if(dayNav) {
+                dayNav.classList.add('scrolled');
+                dayNav.style.top = (header.offsetHeight - 1) + 'px'; // 緊貼 Header
+            }
+        } else {
+            if(header) header.classList.remove('scrolled');
+            if(dayNav) dayNav.classList.remove('scrolled');
+        }
+    });
 
     const toggleArea = document.querySelector('.payer-toggle');
     const slider = document.querySelector('.toggle-slider');
@@ -625,7 +697,29 @@ function renderCategorySummary() {
 
 function renderExpenses(isLoading = false) {
     const listContainer = document.getElementById('expense-list'); if (!listContainer) return; listContainer.innerHTML = '';
-    if (isLoading) { listContainer.innerHTML = '<p style="text-align:center; color:#86868b; font-size:12px; margin-top:20px;">☁️ 雲端同步中...</p>'; return; }
+    
+    // 🌟 記帳本骨架螢幕 (載入中動畫)
+    if (isLoading) { 
+        listContainer.innerHTML = `
+            <div class="skeleton-item">
+                <div class="skeleton skeleton-avatar"></div>
+                <div class="skeleton-info">
+                    <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                    <div class="skeleton skeleton-text" style="width: 40%; height: 10px;"></div>
+                </div>
+                <div class="skeleton skeleton-price"></div>
+            </div>
+            <div class="skeleton-item">
+                <div class="skeleton skeleton-avatar"></div>
+                <div class="skeleton-info">
+                    <div class="skeleton skeleton-text" style="width: 50%;"></div>
+                    <div class="skeleton skeleton-text" style="width: 30%; height: 10px;"></div>
+                </div>
+                <div class="skeleton skeleton-price"></div>
+            </div>`; 
+        return; 
+    }
+
     let timmyTotal = 0; let jjTotal = 0; let itemIndex = 0;
     [...expenses].reverse().forEach(exp => {
         if (exp.payer === 'Timmy') { timmyTotal += parseInt(exp.amount); } else { jjTotal += parseInt(exp.amount); }
