@@ -137,7 +137,7 @@ function slideModalDay(direction) {
         modalBody.style.transform = 'translateX(0)';
         modalBody.style.opacity = '1';
 
-        // 滾動條歸零
+        // 滾動條歸零修復：確保切換天數時回到最上方
         const modalContent = document.querySelector('.modal-content');
         if (modalContent) modalContent.scrollTop = 0;
 
@@ -169,6 +169,7 @@ function openModal(dayId, event) {
         modal.classList.add('open');
         document.body.style.overflow = 'hidden';
 
+        // 修復痛點：每次打開視窗時，延時強制將滾動條回到最頂部
         setTimeout(() => {
             const modalContent = modal.querySelector('.modal-content');
             if (modalContent) modalContent.scrollTop = 0;
@@ -182,9 +183,12 @@ function openModal(dayId, event) {
 
 function openCurrentDayPreview(event) {
     const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
     const date = now.getDate();
     let dayNum = 1;
-    if (now.getFullYear() === 2026 && (now.getMonth() + 1) === 8 && date >= 10 && date <= 17) {
+    
+    if (year === 2026 && month === 8 && date >= 10 && date <= 17) {
         dayNum = date - 9; 
     }
     openModal('day' + dayNum, event);
@@ -255,19 +259,28 @@ async function fetchWeather(lat, lon, cityName) {
 
 function updateItineraryPreview() {
     const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
     const date = now.getDate();
+
     const heroNowTime = document.getElementById('preview-now-time');
     const heroNowTitle = document.getElementById('preview-now-title');
     const heroNextTitle = document.getElementById('preview-next-title');
     const heroNextTime = document.getElementById('preview-next-time');
     const heroNextLabel = document.getElementById('preview-next-label');
-    const isTripTime = (now.getFullYear() === 2026 && (now.getMonth() + 1) === 8 && date >= 10 && date <= 17);
+
+    const isTripTime = (year === 2026 && month === 8 && date >= 10 && date <= 17);
     
-    document.querySelectorAll('.time-item').forEach(el => { el.classList.remove('active'); el.style.setProperty('--dot-offset', '0px'); });
+    document.querySelectorAll('.time-item').forEach(el => {
+        el.classList.remove('active');
+        el.style.setProperty('--dot-offset', '0px');
+    });
+
+    const targetDate = new Date(2026, 7, 10); 
+    const diffTime = targetDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (!isTripTime) {
-        const targetDate = new Date(2026, 7, 10); 
-        const diffDays = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
         if (diffDays > 0) {
             if(heroNowTime) heroNowTime.innerText = "⏳";
             if(heroNowTitle) heroNowTitle.innerText = "期待出發";
@@ -287,34 +300,46 @@ function updateItineraryPreview() {
     if(heroNextLabel) heroNextLabel.innerText = "下個時間";
     const currentScore = now.getHours() * 60 + now.getMinutes();
     const currentDayNum = date - 9; 
-    const daySection = document.getElementById(`content-day${currentDayNum}`);
+    const dayDataId = `content-day${currentDayNum}`;
+    const daySection = document.getElementById(dayDataId);
+
     if (!daySection) return;
-    
+
     const items = Array.from(daySection.querySelectorAll('.time-item'));
     const itinerary = items.map(el => {
         const [h, m] = el.getAttribute('data-time').split(':').map(Number);
-        return { time: el.getAttribute('data-time'), score: h * 60 + m, title: el.querySelector('.item-title').innerText };
+        const titleEl = el.querySelector('.item-title');
+        const itemTitle = titleEl ? titleEl.innerText : el.querySelector('span:last-child').innerText;
+        return { time: el.getAttribute('data-time'), score: h * 60 + m, title: itemTitle };
     });
+
+    let currentIdx = itinerary.findLastIndex(item => currentScore >= item.score);
     
-    let idx = itinerary.findLastIndex(item => currentScore >= item.score);
-    if (idx === -1) {
+    if (itinerary.length === 0) {
+        if(heroNowTime) heroNowTime.innerText = "--:--"; 
+        if(heroNowTitle) heroNowTitle.innerText = "自由活動";
+        if(heroNextTitle) heroNextTitle.innerText = "探索城市"; 
+        if(heroNextTime) heroNextTime.innerText = "--:--";
+    } else if (currentIdx === -1) {
         if(heroNowTime) heroNowTime.innerText = "晨間"; 
         if(heroNowTitle) heroNowTitle.innerText = "準備出門";
         if(heroNextTitle) heroNextTitle.innerText = itinerary[0].title; 
         if(heroNextTime) heroNextTime.innerText = itinerary[0].time;
     } else {
-        const curr = itinerary[idx]; 
-        const next = itinerary[idx + 1] || { time: "--:--", title: "行程結束" };
-        if(heroNowTime) heroNowTime.innerText = curr.time; 
-        if(heroNowTitle) heroNowTitle.innerText = curr.title;
-        if(heroNextTitle) heroNextTitle.innerText = next.title; 
-        if(heroNextTime) heroNextTime.innerText = next.time;
+        const currentItem = itinerary[currentIdx];
+        const nextItem = itinerary[currentIdx + 1] || { time: "--:--", title: "行程結束" };
+        if(heroNowTime) heroNowTime.innerText = currentItem.time; 
+        if(heroNowTitle) heroNowTitle.innerText = currentItem.title;
+        if(heroNextTitle) heroNextTitle.innerText = nextItem.title; 
+        if(heroNextTime) heroNextTime.innerText = nextItem.time;
 
         let ratio = 0;
-        if (next.time !== "--:--") {
-            const totalMins = next.score - curr.score;
-            const elapsedMins = currentScore - curr.score;
-            if (totalMins > 0) ratio = Math.max(0, Math.min(1, elapsedMins / totalMins));
+        if (nextItem.time !== "--:--") {
+            const totalMins = nextItem.score - currentItem.score;
+            const elapsedMins = currentScore - currentItem.score;
+            if (totalMins > 0) {
+                ratio = Math.max(0, Math.min(1, elapsedMins / totalMins));
+            }
         }
 
         const modal = document.getElementById('itineraryModal');
@@ -322,18 +347,20 @@ function updateItineraryPreview() {
             const modalHeader = document.querySelector('#modalBody h2');
             if (modalHeader && modalHeader.innerText.includes(`Day ${currentDayNum}`)) {
                 const modalItems = document.querySelectorAll('#modalBody .time-item');
-                if (modalItems[idx]) {
-                    modalItems[idx].classList.add('active');
-                    let mDist = 0;
-                    if (modalItems[idx + 1]) mDist = modalItems[idx + 1].offsetTop - modalItems[idx].offsetTop;
-                    modalItems[idx].style.setProperty('--dot-offset', (ratio * mDist) + 'px');
+                if (modalItems[currentIdx]) {
+                    modalItems[currentIdx].classList.add('active');
+                    let mDistance = 0;
+                    if (modalItems[currentIdx + 1]) {
+                        mDistance = modalItems[currentIdx + 1].offsetTop - modalItems[currentIdx].offsetTop;
+                    }
+                    modalItems[currentIdx].style.setProperty('--dot-offset', (ratio * mDistance) + 'px');
                 }
             }
         }
     }
 }
 
-// 💱 匯率邏輯
+// 💱 匯率與真實刷卡試算 (升級版)
 let baseJpyToTwd = 0.2020; 
 let displayRate = 0.2020;
 
@@ -358,6 +385,7 @@ async function fetchExchangeRate() {
             calculateExchange();
         }
     } catch (error) {
+        console.error("無法抓取即時匯率，使用預設值", error);
         rateElement.innerText = displayRate.toFixed(4) + " (離線預估)";
         timeElement.innerText = "最後更新: 離線模式";
         calculateExchange();
@@ -367,6 +395,7 @@ async function fetchExchangeRate() {
 function calculateExchange() {
     const jpyInput = document.getElementById('jpy-input').value;
     const jpyAmount = parseFloat(jpyInput) || 0;
+    
     const twdCash = jpyAmount * baseJpyToTwd;
     const twdVisa = twdCash * 1.015; 
     const twdMaster = (twdCash * 0.9985) * 1.015; 
@@ -377,7 +406,7 @@ function calculateExchange() {
 }
 
 // =========================================
-// 🚀 初始化與全域監聽
+// 🚀 初始化與手勢監聽
 // =========================================
 function init() {
     const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
@@ -406,8 +435,8 @@ function init() {
                 else if (cityStr || localityStr) displayName = cityStr || localityStr;
                 fetchWeather(lat, lon, displayName);
             } catch { fetchWeather(lat, lon, "目前位置"); }
-        }, () => fetchWeather(34.666, 135.500, "大阪市 (預設)")); 
-    } else { fetchWeather(34.666, 135.500, "大阪市 (預設)"); }
+        }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); 
+    } else { fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); }
 
     syncFromCloud();
     renderExpenses(expenses.length === 0);
@@ -420,7 +449,7 @@ function init() {
 
     setTimeout(() => switchTab('home'), 100);
 
-    // 🌟 Scroll Spy 滾動毛玻璃效果監聽
+    // Scroll Spy 滾動毛玻璃效果監聽
     window.addEventListener('scroll', () => {
         const header = document.getElementById('main-header');
         const dayNav = document.getElementById('day-nav-wrapper');
@@ -698,7 +727,7 @@ function renderCategorySummary() {
 function renderExpenses(isLoading = false) {
     const listContainer = document.getElementById('expense-list'); if (!listContainer) return; listContainer.innerHTML = '';
     
-    // 🌟 記帳本骨架螢幕 (載入中動畫)
+    // 記帳本骨架螢幕 (載入中動畫)
     if (isLoading) { 
         listContainer.innerHTML = `
             <div class="skeleton-item">
