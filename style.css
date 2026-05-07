@@ -491,3 +491,36 @@ header h1 { margin: 0; font-size: 24px; }
 [data-theme="dark"] .utility-tracker-card { background: #0a192f; border-color: #0a84ff; }
 [data-theme="dark"] .util-name { color: #fff; }
 [data-theme="dark"] .util-btn-mini, [data-theme="dark"] .util-status-text { color: #0a84ff; }
+
+/* =========================================
+   13. 🌍 地圖分頁樣式 (Leaflet.js)
+========================================= */
+#view-map .layout-width {
+    height: calc(100vh - 180px);
+    display: flex;
+    flex-direction: column;
+}
+
+#tour-map { 
+    flex: 1; 
+    width: 100%; 
+    border-radius: 20px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+    z-index: 1; /* 避免蓋過上方 header 或底層 tab bar */
+    margin-bottom: 20px;
+    border: 2px solid rgba(255,255,255,0.5);
+}
+
+.custom-map-marker { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    background: transparent; 
+    border: none; 
+}
+
+/* 深色模式下的地圖濾鏡 (讓地圖變暗) */
+[data-theme="dark"] #tour-map { 
+    filter: brightness(0.85) contrast(1.1) invert(0.1) hue-rotate(180deg); /* 產生酷炫的深色地圖感 */
+    border-color: rgba(255,255,255,0.1);
+}
