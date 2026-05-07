@@ -1,5 +1,6 @@
 let currentActiveButton = null;
 let currentOpenDayNum = 1; 
+let tourMap = null; // 存放地圖物件
 
 // =========================================
 // 🌙 深色模式邏輯
@@ -18,7 +19,7 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('active'); });
     document.getElementById('view-' + tabId).classList.add('active');
     const activeBtn = document.getElementById('btn-' + tabId);
-    activeBtn.classList.add('active');
+    if(activeBtn) activeBtn.classList.add('active');
     
     const indicator = document.getElementById('tab-indicator');
     if (indicator && activeBtn) {
@@ -26,6 +27,13 @@ function switchTab(tabId) {
         indicator.style.width = `${activeBtn.offsetWidth}px`;
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 🌍 如果切換到地圖頁，必須重新計算地圖大小 (Leaflet 在隱藏 div 中會算錯大小)
+    if (tabId === 'map') {
+        setTimeout(() => {
+            if (tourMap) tourMap.invalidateSize();
+        }, 100);
+    }
 }
 
 function setModalOrigin(event) {
@@ -40,6 +48,55 @@ function setModalOrigin(event) {
     const originX = btnRect.left + (btnRect.width / 2) - layoutLeft;
     const originY = btnRect.top + (btnRect.height / 2) - layoutTop;
     modalContent.style.transformOrigin = `${originX}px ${originY}px`;
+}
+
+// =========================================
+// 🌍 Leaflet 互動式地圖初始化
+// =========================================
+function initMap() {
+    const mapElement = document.getElementById('tour-map');
+    if (!mapElement) return;
+
+    // 設定中心點在大阪/京都之間
+    tourMap = L.map('tour-map').setView([34.75, 135.5], 9);
+
+    // 使用開源的 OSM 圖資 (這裡選用比較有質感的 Carto Voyager 風格)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap & Carto',
+        maxZoom: 19
+    }).addTo(tourMap);
+
+    // 行程重要地點清單
+    const locations = [
+        { name: "艾思利德酒店難波東<br><span style='font-size:10px;color:gray'>您的下榻飯店</span>", lat: 34.6601, lng: 135.5036, icon: "🏨" },
+        { name: "關西機場 (KIX)<br><span style='font-size:10px;color:gray'>抵達與起飛、還車點</span>", lat: 34.4320, lng: 135.2304, icon: "✈️" },
+        { name: "Kichi Kichi Omurice<br><span style='font-size:10px;color:gray'>Day 6 傳說級蛋包飯</span>", lat: 35.0064, lng: 135.7706, icon: "🍳" },
+        { name: "大喜 (Taiki)<br><span style='font-size:10px;color:gray'>Day 2 午餐</span>", lat: 34.6675, lng: 135.5020, icon: "🥢" },
+        { name: "生駒山上遊園地<br><span style='font-size:10px;color:gray'>Day 2 夕陽樂園</span>", lat: 34.6800, lng: 135.6800, icon: "🎡" },
+        { name: "有馬溫泉<br><span style='font-size:10px;color:gray'>Day 3 溫泉老街</span>", lat: 34.7975, lng: 135.2475, icon: "♨️" },
+        { name: "大阪城<br><span style='font-size:10px;color:gray'>Day 5 歷史巡禮</span>", lat: 34.6873, lng: 135.5262, icon: "🏯" },
+        { name: "京瓷巨蛋<br><span style='font-size:10px;color:gray'>Day 5 熱血觀賽</span>", lat: 34.6693, lng: 135.4761, icon: "⚾" },
+        { name: "伊根舟屋<br><span style='font-size:10px;color:gray'>Day 6 海之京都</span>", lat: 35.6738, lng: 135.2816, icon: "⛴️" },
+        { name: "天橋立<br><span style='font-size:10px;color:gray'>Day 6 飛龍觀</span>", lat: 35.5683, lng: 135.1916, icon: "🚠" },
+        { name: "保津川乘船場<br><span style='font-size:10px;color:gray'>Day 7 刺激乘船</span>", lat: 35.0163, lng: 135.5762, icon: "🛶" },
+        { name: "伏見稻荷大社<br><span style='font-size:10px;color:gray'>Day 7 千本鳥居</span>", lat: 34.9671, lng: 135.7726, icon: "⛩️" },
+        { name: "臨空城 Premium Outlets<br><span style='font-size:10px;color:gray'>Day 8 彈性購物</span>", lat: 34.4115, lng: 135.2945, icon: "🛍️" }
+    ];
+
+    locations.forEach(loc => {
+        // 自訂圖標樣式
+        const customIcon = L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div style="font-size: 20px; background: white; border-radius: 50%; width: 34px; height: 34px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--ios-blue);">${loc.icon}</div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 34],
+            popupAnchor: [0, -34]
+        });
+        
+        L.marker([loc.lat, loc.lng], {icon: customIcon})
+         .addTo(tourMap)
+         .bindPopup(`<b style="font-size: 13px; line-height:1.4;">${loc.name}</b>`);
+    });
 }
 
 // =========================================
@@ -79,10 +136,9 @@ function checkReservationReminder() {
 }
 
 // =========================================
-// ✈️ 航班即時動態追蹤 (已修復 Day 8 問題並加入自動巡航)
+// ✈️ 航班即時動態追蹤
 // =========================================
 function updateFlightStatus() {
-    // 🌟 修復：改用 class 選取器，避免 Day 1 與 Day 8 共用相同 ID 造成的抓取錯誤
     const badge = document.querySelector('#modalBody .flight-tracker-card .flight-status');
     if(!badge) return;
     
@@ -91,8 +147,6 @@ function updateFlightStatus() {
     
     setTimeout(() => {
         const isOnTime = Math.random() > 0.15; 
-        
-        // 🌟 新增：自動判斷天數，切換不同的抵達地名稱
         const dest = currentOpenDayNum === 8 ? "TPE T1" : "KIX T1";
 
         if (isOnTime) {
@@ -433,6 +487,7 @@ function init() {
         }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); 
     } else { fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); }
 
+    initMap(); // 初始化地圖
     syncFromCloud();
     renderExpenses(expenses.length === 0);
     updateItineraryPreview();
@@ -442,12 +497,10 @@ function init() {
     checkReservationReminder();
     setInterval(checkReservationReminder, 30000); 
     
-    // 🌟 新增：每 60 秒背景自動檢查並更新航班動態，完全不需要手動按！
     setInterval(updateFlightStatus, 60000); 
 
     setTimeout(() => switchTab('home'), 100);
 
-    // Scroll Spy 滾動毛玻璃效果監聽
     window.addEventListener('scroll', () => {
         const header = document.getElementById('main-header');
         const dayNav = document.getElementById('day-nav-wrapper');
@@ -495,7 +548,7 @@ function init() {
     const tabBar = document.querySelector('.bottom-tab-bar');
     const tabIndicator = document.getElementById('tab-indicator');
     const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabsList = ['home', 'expense', 'exchange'];
+    const tabsList = ['home', 'map', 'expense', 'exchange']; // 加上 map
 
     if (tabBar && tabIndicator) {
         let isTabDragging = false; let tabStartX = 0; let initialIndicatorX = 0;
