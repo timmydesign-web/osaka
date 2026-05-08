@@ -1,9 +1,11 @@
 let currentActiveButton = null;
 let currentOpenDayNum = 1; 
-let tourMap = null; // 存放地圖物件
+let tourMap = null;
+let isAddMarkerMode = false;
+let customMarkers = JSON.parse(localStorage.getItem('customMarkers')) || [];
 
 // =========================================
-// 🌙 深色模式邏輯
+// 🌙 深色模式與分頁切換
 // =========================================
 function toggleTheme() {
     const html = document.documentElement;
@@ -15,8 +17,8 @@ function toggleTheme() {
 }
 
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-view').forEach(view => { view.classList.remove('active'); });
-    document.querySelectorAll('.tab-btn').forEach(btn => { btn.classList.remove('active'); });
+    document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.getElementById('view-' + tabId).classList.add('active');
     const activeBtn = document.getElementById('btn-' + tabId);
     if(activeBtn) activeBtn.classList.add('active');
@@ -26,14 +28,11 @@ function switchTab(tabId) {
         indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
         indicator.style.width = `${activeBtn.offsetWidth}px`;
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 🌍 如果切換到地圖頁，必須重新計算地圖大小 (Leaflet 在隱藏 div 中會算錯大小)
     if (tabId === 'map') {
-        setTimeout(() => {
-            if (tourMap) tourMap.invalidateSize();
-        }, 100);
+        setTimeout(() => { if (tourMap) tourMap.invalidateSize(); }, 200);
     }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function setModalOrigin(event) {
@@ -51,56 +50,95 @@ function setModalOrigin(event) {
 }
 
 // =========================================
-// 🌍 Leaflet 互動式地圖初始化
+// 🌍 智慧地圖系統 (含自動 Emoji)
 // =========================================
-function initMap() {
-    const mapElement = document.getElementById('tour-map');
-    if (!mapElement) return;
-
-    // 設定中心點在大阪/京都之間
-    tourMap = L.map('tour-map').setView([34.75, 135.5], 9);
-
-    // 使用開源的 OSM 圖資 (這裡選用比較有質感的 Carto Voyager 風格)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap & Carto',
-        maxZoom: 19
-    }).addTo(tourMap);
-
-    // 行程重要地點清單
-    const locations = [
-        { name: "艾思利德酒店難波東<br><span style='font-size:10px;color:gray'>您的下榻飯店</span>", lat: 34.6601, lng: 135.5036, icon: "🏨" },
-        { name: "關西機場 (KIX)<br><span style='font-size:10px;color:gray'>抵達與起飛、還車點</span>", lat: 34.4320, lng: 135.2304, icon: "✈️" },
-        { name: "Kichi Kichi Omurice<br><span style='font-size:10px;color:gray'>Day 6 傳說級蛋包飯</span>", lat: 35.0064, lng: 135.7706, icon: "🍳" },
-        { name: "大喜 (Taiki)<br><span style='font-size:10px;color:gray'>Day 2 午餐</span>", lat: 34.6675, lng: 135.5020, icon: "🥢" },
-        { name: "生駒山上遊園地<br><span style='font-size:10px;color:gray'>Day 2 夕陽樂園</span>", lat: 34.6800, lng: 135.6800, icon: "🎡" },
-        { name: "有馬溫泉<br><span style='font-size:10px;color:gray'>Day 3 溫泉老街</span>", lat: 34.7975, lng: 135.2475, icon: "♨️" },
-        { name: "大阪城<br><span style='font-size:10px;color:gray'>Day 5 歷史巡禮</span>", lat: 34.6873, lng: 135.5262, icon: "🏯" },
-        { name: "京瓷巨蛋<br><span style='font-size:10px;color:gray'>Day 5 熱血觀賽</span>", lat: 34.6693, lng: 135.4761, icon: "⚾" },
-        { name: "伊根舟屋<br><span style='font-size:10px;color:gray'>Day 6 海之京都</span>", lat: 35.6738, lng: 135.2816, icon: "⛴️" },
-        { name: "天橋立<br><span style='font-size:10px;color:gray'>Day 6 飛龍觀</span>", lat: 35.5683, lng: 135.1916, icon: "🚠" },
-        { name: "保津川乘船場<br><span style='font-size:10px;color:gray'>Day 7 刺激乘船</span>", lat: 35.0163, lng: 135.5762, icon: "🛶" },
-        { name: "伏見稻荷大社<br><span style='font-size:10px;color:gray'>Day 7 千本鳥居</span>", lat: 34.9671, lng: 135.7726, icon: "⛩️" },
-        { name: "臨空城 Premium Outlets<br><span style='font-size:10px;color:gray'>Day 8 彈性購物</span>", lat: 34.4115, lng: 135.2945, icon: "🛍️" }
+function autoEmoji(name) {
+    const rules = [
+        { key: ["肉", "牛", "燒", "排"], icon: "🥩" },
+        { key: ["麵", "拉麵", "烏龍"], icon: "🍜" },
+        { key: ["壽司", "魚", "刺身", "海鮮"], icon: "🍣" },
+        { key: ["酒", "居酒屋", "吧"], icon: "🍺" },
+        { key: ["咖啡", "甜", "奶茶", "冰", "蛋糕"], icon: "🍰" },
+        { key: ["買", "逛", "商店", "百貨", "藥"], icon: "🛍️" },
+        { key: ["站", "鐵", "捷運"], icon: "🚆" },
+        { key: ["寺", "社", "神"], icon: "⛩️" },
+        { key: ["景", "美", "拍"], icon: "📸" }
     ];
+    for (let rule of rules) {
+        if (rule.key.some(k => name.includes(k))) return rule.icon;
+    }
+    return "📍";
+}
 
-    locations.forEach(loc => {
-        // 自訂圖標樣式
-        const customIcon = L.divIcon({
-            className: 'custom-map-marker',
-            html: `<div style="font-size: 20px; background: white; border-radius: 50%; width: 34px; height: 34px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid var(--ios-blue);">${loc.icon}</div>`,
-            iconSize: [34, 34],
-            iconAnchor: [17, 34],
-            popupAnchor: [0, -34]
-        });
-        
-        L.marker([loc.lat, loc.lng], {icon: customIcon})
-         .addTo(tourMap)
-         .bindPopup(`<b style="font-size: 13px; line-height:1.4;">${loc.name}</b>`);
+function initMap() {
+    if (tourMap) return;
+    tourMap = L.map('tour-map').setView([34.7, 135.5], 10);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(tourMap);
+
+    const fixedLocs = [
+        { name: "艾思利德飯店", lat: 34.6601, lng: 135.5036, icon: "🏨" },
+        { name: "大喜 (Taiki)", lat: 34.6675, lng: 135.5020, icon: "🥢" },
+        { name: "生駒山上遊園地", lat: 34.6800, lng: 135.6800, icon: "🎡" },
+        { name: "有馬溫泉", lat: 34.7975, lng: 135.2475, icon: "♨️" },
+        { name: "大阪城", lat: 34.6873, lng: 135.5262, icon: "🏯" },
+        { name: "京瓷巨蛋", lat: 34.6693, lng: 135.4761, icon: "⚾" },
+        { name: "Kichi Kichi", lat: 35.0064, lng: 135.7706, icon: "🍳" },
+        { name: "伊根舟屋", lat: 35.6738, lng: 135.2816, icon: "⛴️" },
+        { name: "天橋立", lat: 35.5683, lng: 135.1916, icon: "🚠" },
+        { name: "保津川乘船場", lat: 35.0163, lng: 135.5762, icon: "🛶" },
+        { name: "伏見稻荷大社", lat: 34.9671, lng: 135.7726, icon: "⛩️" },
+        { name: "臨空城 Outlets", lat: 34.4115, lng: 135.2945, icon: "🛍️" },
+        { name: "關西機場 (KIX)", lat: 34.4320, lng: 135.2304, icon: "✈️" }
+    ];
+    fixedLocs.forEach(loc => addMarkerToMap(loc.lat, loc.lng, loc.name, loc.icon, false));
+
+    customMarkers.forEach(loc => addMarkerToMap(loc.lat, loc.lng, loc.name, loc.icon, true));
+
+    tourMap.on('click', function(e) {
+        if (!isAddMarkerMode) return;
+        const name = prompt("請輸入地點名稱：\n(系統會根據名稱自動產生圖示喔！)");
+        if (name) {
+            const emoji = autoEmoji(name);
+            const newLoc = { name, lat: e.latlng.lat, lng: e.latlng.lng, icon: emoji };
+            customMarkers.push(newLoc);
+            localStorage.setItem('customMarkers', JSON.stringify(customMarkers));
+            addMarkerToMap(newLoc.lat, newLoc.lng, newLoc.name, newLoc.icon, true);
+            toggleAddMarkerMode(); 
+        }
     });
 }
 
+function addMarkerToMap(lat, lng, name, icon, isCustom) {
+    const html = `<div style="font-size: 20px; background: white; border-radius: 50%; width: 34px; height: 34px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid ${isCustom ? '#ff3b30' : '#0071e3'};">${icon}</div>`;
+    L.marker([lat, lng], { icon: L.divIcon({ className: 'custom-map-marker', html, iconSize: [34, 34], iconAnchor: [17, 34] }) })
+     .addTo(tourMap)
+     .bindPopup(`<b>${isCustom ? '[自訂] ' : ''}${name}</b>`);
+}
+
+function toggleAddMarkerMode() {
+    isAddMarkerMode = !isAddMarkerMode;
+    const btn = document.getElementById('add-marker-toggle');
+    const hint = document.getElementById('map-hint');
+    if (isAddMarkerMode) {
+        btn.innerText = "📍 點擊地圖中...";
+        btn.classList.add('active');
+        hint.style.display = 'block';
+    } else {
+        btn.innerText = "📍 新增地點: 關";
+        btn.classList.remove('active');
+        hint.style.display = 'none';
+    }
+}
+
+function clearCustomMarkers() {
+    if (confirm("確定要清除所有手動新增的地點嗎？")) {
+        localStorage.removeItem('customMarkers');
+        location.reload();
+    }
+}
+
 // =========================================
-// 🍳 Kichi Kichi 預約雷達系統
+// 🍳 預約提醒與 ✈️ 航班動態
 // =========================================
 function checkReservationReminder() {
     const now = new Date();
@@ -112,7 +150,6 @@ function checkReservationReminder() {
     const jstMin = jstNow.getMinutes();
 
     const isTargetDay = (jstYear === 2026 && jstMonth === 8 && jstDate === 15);
-    
     const banner = document.getElementById('reservation-alert-banner');
     const modalStatus = document.querySelector('#modalBody #kichikichi-status');
 
@@ -135,20 +172,14 @@ function checkReservationReminder() {
     }
 }
 
-// =========================================
-// ✈️ 航班即時動態追蹤
-// =========================================
 function updateFlightStatus() {
     const badge = document.querySelector('#modalBody .flight-tracker-card .flight-status');
     if(!badge) return;
-    
     badge.innerText = "🔄 同步中...";
     badge.className = "flight-status";
-    
     setTimeout(() => {
         const isOnTime = Math.random() > 0.15; 
         const dest = currentOpenDayNum === 8 ? "TPE T1" : "KIX T1";
-
         if (isOnTime) {
             badge.innerText = `✅ 準點 (抵達 ${dest})`;
             badge.className = "flight-status on-time";
@@ -160,7 +191,7 @@ function updateFlightStatus() {
 }
 
 // =========================================
-// 🌟 視窗與內部無縫滑動邏輯 (Micro-interactions)
+// 🌟 視窗與內部無縫滑動邏輯
 // =========================================
 function updateModalNav() {
     const prevBtn = document.getElementById('modal-prev-btn');
@@ -260,6 +291,9 @@ function closeModal() {
     }
 }
 
+// =========================================
+// 🌦️ 天氣預報系統
+// =========================================
 function getWeatherEmoji(code) {
     const table = { 0: "☀️", 1: "⛅", 2: "⛅", 3: "☁️", 45: "☁️", 48: "☁️", 51: "🌧️", 61: "🌧️", 95: "⛈️" };
     return table[code] || "🌤️";
@@ -306,6 +340,9 @@ async function fetchWeather(lat, lon, cityName) {
     }
 }
 
+// =========================================
+// 🕒 首頁行程時間預覽
+// =========================================
 function updateItineraryPreview() {
     const now = new Date();
     const year = now.getFullYear();
@@ -409,24 +446,23 @@ function updateItineraryPreview() {
     }
 }
 
-// 💱 匯率與真實刷卡試算 
+// =========================================
+// 💱 匯率與刷卡試算
+// =========================================
 let baseJpyToTwd = 0.2020; 
 let displayRate = 0.2020;
 
 async function fetchExchangeRate() {
     const rateElement = document.getElementById('current-rate');
     const timeElement = document.getElementById('rate-update-time');
-    
     try {
         const response = await fetch('https://open.er-api.com/v6/latest/JPY');
         const data = await response.json();
-        
         if (data && data.rates && data.rates.TWD) {
             const rawRate = data.rates.TWD;
             baseJpyToTwd = rawRate * 1.005; 
             displayRate = parseFloat(baseJpyToTwd.toFixed(4));
             rateElement.innerText = displayRate;
-            
             const now = new Date();
             const hours = now.getHours().toString().padStart(2, '0');
             const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -434,7 +470,6 @@ async function fetchExchangeRate() {
             calculateExchange();
         }
     } catch (error) {
-        console.error("無法抓取即時匯率，使用預設值", error);
         rateElement.innerText = displayRate.toFixed(4) + " (離線預估)";
         timeElement.innerText = "最後更新: 離線模式";
         calculateExchange();
@@ -444,174 +479,16 @@ async function fetchExchangeRate() {
 function calculateExchange() {
     const jpyInput = document.getElementById('jpy-input').value;
     const jpyAmount = parseFloat(jpyInput) || 0;
-    
     const twdCash = jpyAmount * baseJpyToTwd;
     const twdVisa = twdCash * 1.015; 
     const twdMaster = (twdCash * 0.9985) * 1.015; 
-
     document.getElementById('twd-cash').innerText = `NT$ ${Math.round(twdCash).toLocaleString()}`;
     document.getElementById('twd-visa').innerText = `NT$ ${Math.round(twdVisa).toLocaleString()}`;
     document.getElementById('twd-master').innerText = `NT$ ${Math.round(twdMaster).toLocaleString()}`;
 }
 
 // =========================================
-// 🚀 初始化與手勢監聽
-// =========================================
-function init() {
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    const toggleBtn = document.getElementById('theme-toggle');
-    if(toggleBtn) toggleBtn.innerText = savedTheme === 'dark' ? '☀️' : '🌙';
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('✅ PWA 離線支援已啟動'))
-                .catch(err => console.log('❌ PWA 註冊失敗', err));
-        });
-    }
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const { latitude: lat, longitude: lon } = pos.coords;
-            try {
-                const geo = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`);
-                const gData = await geo.json();
-                let cityStr = gData.city || gData.principalSubdivision || "";
-                let localityStr = gData.locality || "";
-                let displayName = "目前位置";
-                if (cityStr && localityStr && cityStr !== localityStr) displayName = `${cityStr} ${localityStr}`;
-                else if (cityStr || localityStr) displayName = cityStr || localityStr;
-                fetchWeather(lat, lon, displayName);
-            } catch { fetchWeather(lat, lon, "目前位置"); }
-        }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); 
-    } else { fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); }
-
-    initMap(); // 初始化地圖
-    syncFromCloud();
-    renderExpenses(expenses.length === 0);
-    updateItineraryPreview();
-    setInterval(updateItineraryPreview, 30000); 
-    fetchExchangeRate();
-
-    checkReservationReminder();
-    setInterval(checkReservationReminder, 30000); 
-    
-    setInterval(updateFlightStatus, 60000); 
-
-    setTimeout(() => switchTab('home'), 100);
-
-    window.addEventListener('scroll', () => {
-        const header = document.getElementById('main-header');
-        const dayNav = document.getElementById('day-nav-wrapper');
-        const scrollY = window.scrollY;
-
-        if (scrollY > 10) {
-            if(header) header.classList.add('scrolled');
-            if(dayNav) {
-                dayNav.classList.add('scrolled');
-                dayNav.style.top = (header.offsetHeight - 1) + 'px'; 
-            }
-        } else {
-            if(header) header.classList.remove('scrolled');
-            if(dayNav) dayNav.classList.remove('scrolled');
-        }
-    });
-
-    const toggleArea = document.querySelector('.payer-toggle');
-    const slider = document.querySelector('.toggle-slider');
-    if (toggleArea && slider) {
-        let isDragging = false; let startX = 0; let currentTranslate = 0; let maxTranslate = 0;
-        toggleArea.addEventListener('touchstart', e => {
-            isDragging = true; startX = e.changedTouches[0].clientX; maxTranslate = slider.offsetWidth;
-            currentTranslate = document.getElementById('payer-jj').checked ? maxTranslate : 0;
-            slider.style.transition = 'none';
-        }, { passive: true });
-        toggleArea.addEventListener('touchmove', e => {
-            if (!isDragging) return;
-            let diff = e.changedTouches[0].clientX - startX;
-            let newTranslate = Math.max(0, Math.min(maxTranslate, currentTranslate + diff));
-            slider.style.transform = `translateX(${newTranslate}px)`;
-            if (Math.abs(diff) > 5 && e.cancelable) e.preventDefault();
-        }, { passive: false });
-        toggleArea.addEventListener('touchend', e => {
-            if (!isDragging) return;
-            isDragging = false; let diff = e.changedTouches[0].clientX - startX;
-            slider.style.transition = ''; slider.style.transform = '';
-            if (Math.abs(diff) > 5) {
-                if (currentTranslate + diff > maxTranslate / 2) document.getElementById('payer-jj').checked = true; 
-                else document.getElementById('payer-timmy').checked = true; 
-            }
-        });
-    }
-
-    const tabBar = document.querySelector('.bottom-tab-bar');
-    const tabIndicator = document.getElementById('tab-indicator');
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabsList = ['home', 'map', 'expense', 'exchange']; // 加上 map
-
-    if (tabBar && tabIndicator) {
-        let isTabDragging = false; let tabStartX = 0; let initialIndicatorX = 0;
-        tabBar.addEventListener('touchstart', e => {
-            if (document.querySelector('.modal.open')) return;
-            isTabDragging = true; tabStartX = e.changedTouches[0].clientX;
-            const activeBtn = document.querySelector('.tab-btn.active');
-            initialIndicatorX = activeBtn ? activeBtn.offsetLeft : 0;
-            tabIndicator.style.transition = 'none';
-        }, { passive: true });
-        tabBar.addEventListener('touchmove', e => {
-            if (!isTabDragging) return;
-            let diff = e.changedTouches[0].clientX - tabStartX;
-            let newTranslate = Math.max(0, Math.min(tabBar.offsetWidth - tabIndicator.offsetWidth, initialIndicatorX + diff));
-            tabIndicator.style.transform = `translateX(${newTranslate}px)`;
-            if (Math.abs(diff) > 5 && e.cancelable) e.preventDefault();
-        }, { passive: false });
-        tabBar.addEventListener('touchend', e => {
-            if (!isTabDragging) return;
-            isTabDragging = false; let diff = e.changedTouches[0].clientX - tabStartX;
-            tabIndicator.style.transition = ''; 
-            if (Math.abs(diff) > 10) {
-                let indicatorCenter = initialIndicatorX + diff + (tabIndicator.offsetWidth / 2);
-                let closestTab = tabsList[0]; let minDistance = Infinity;
-                tabBtns.forEach((btn, index) => {
-                    let distance = Math.abs(indicatorCenter - (btn.offsetLeft + (btn.offsetWidth / 2)));
-                    if (distance < minDistance) { minDistance = distance; closestTab = tabsList[index]; }
-                });
-                switchTab(closestTab);
-            } else {
-                const activeBtn = document.querySelector('.tab-btn.active');
-                if (activeBtn) tabIndicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
-            }
-        });
-    }
-
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(event) {
-            if (event.target === this) {
-                if (this.id === 'itineraryModal') closeModal();
-                else if (this.id === 'expenseModal') closeExpenseModal();
-                else if (this.id === 'photoDiaryModal') closePhotoDiaryModal();
-                else if (this.id === 'photoViewerModal') closePhotoViewer();
-            }
-        });
-    });
-}
-
-document.addEventListener('DOMContentLoaded', init);
-
-window.addEventListener('resize', () => {
-    const activeBtn = document.querySelector('.tab-btn.active');
-    if (activeBtn) {
-        const indicator = document.getElementById('tab-indicator');
-        if(indicator) {
-            indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
-            indicator.style.width = `${activeBtn.offsetWidth}px`;
-        }
-    }
-});
-
-// =========================================
-// 📷 旅程回憶錄邏輯
+// 📷 旅程回憶錄 (Photo Diary) 完整邏輯
 // =========================================
 let travelPhotos = JSON.parse(localStorage.getItem('travelPhotos')) || {};
 let currentUploadDay = 1;
@@ -691,7 +568,7 @@ function deletePhoto() {
 }
 
 // =========================================
-// 💰 記帳本邏輯
+// 💰 雙人記帳本 (Expense) 完整邏輯
 // =========================================
 const CLOUD_API_URL = "https://script.google.com/macros/s/AKfycbx61FkjxrU5yKUmmvOw0kd_hvEUN73B8CfMZaTwFzyHfTPLN8n6L8rmkm4E6RgA2hUDRw/exec";
 let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
@@ -817,3 +694,162 @@ function renderExpenses(isLoading = false) {
         else { settlementText.innerHTML = `✅ 目前帳目完美平衡`; settlementText.className = "settlement balanced"; }
     }
 }
+
+// =========================================
+// 🚀 初始化與全域監聽器 (包含所有滑動效果)
+// =========================================
+function init() {
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    const toggleBtn = document.getElementById('theme-toggle');
+    if(toggleBtn) toggleBtn.innerText = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('✅ PWA 離線支援已啟動'))
+                .catch(err => console.log('❌ PWA 註冊失敗', err));
+        });
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            try {
+                const geo = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=zh`);
+                const gData = await geo.json();
+                let cityStr = gData.city || gData.principalSubdivision || "";
+                let localityStr = gData.locality || "";
+                let displayName = "目前位置";
+                if (cityStr && localityStr && cityStr !== localityStr) displayName = `${cityStr} ${localityStr}`;
+                else if (cityStr || localityStr) displayName = cityStr || localityStr;
+                fetchWeather(lat, lon, displayName);
+            } catch { fetchWeather(lat, lon, "目前位置"); }
+        }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); 
+    } else { fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); }
+
+    initMap(); 
+    syncFromCloud();
+    renderExpenses(expenses.length === 0);
+    updateItineraryPreview();
+    setInterval(updateItineraryPreview, 30000); 
+    fetchExchangeRate();
+
+    checkReservationReminder();
+    setInterval(checkReservationReminder, 30000); 
+    setInterval(updateFlightStatus, 60000); 
+
+    setTimeout(() => switchTab('home'), 100);
+
+    // 🌟 Scroll Spy 滾動毛玻璃效果監聽
+    window.addEventListener('scroll', () => {
+        const header = document.getElementById('main-header');
+        const dayNav = document.getElementById('day-nav-wrapper');
+        const scrollY = window.scrollY;
+
+        if (scrollY > 10) {
+            if(header) header.classList.add('scrolled');
+            if(dayNav) {
+                dayNav.classList.add('scrolled');
+                dayNav.style.top = (header.offsetHeight - 1) + 'px'; 
+            }
+        } else {
+            if(header) header.classList.remove('scrolled');
+            if(dayNav) dayNav.classList.remove('scrolled');
+        }
+    });
+
+    // 🌟 記帳本付款人滑動切換
+    const toggleArea = document.querySelector('.payer-toggle');
+    const slider = document.querySelector('.toggle-slider');
+    if (toggleArea && slider) {
+        let isDragging = false; let startX = 0; let currentTranslate = 0; let maxTranslate = 0;
+        toggleArea.addEventListener('touchstart', e => {
+            isDragging = true; startX = e.changedTouches[0].clientX; maxTranslate = slider.offsetWidth;
+            currentTranslate = document.getElementById('payer-jj').checked ? maxTranslate : 0;
+            slider.style.transition = 'none';
+        }, { passive: true });
+        toggleArea.addEventListener('touchmove', e => {
+            if (!isDragging) return;
+            let diff = e.changedTouches[0].clientX - startX;
+            let newTranslate = Math.max(0, Math.min(maxTranslate, currentTranslate + diff));
+            slider.style.transform = `translateX(${newTranslate}px)`;
+            if (Math.abs(diff) > 5 && e.cancelable) e.preventDefault();
+        }, { passive: false });
+        toggleArea.addEventListener('touchend', e => {
+            if (!isDragging) return;
+            isDragging = false; let diff = e.changedTouches[0].clientX - startX;
+            slider.style.transition = ''; slider.style.transform = '';
+            if (Math.abs(diff) > 5) {
+                if (currentTranslate + diff > maxTranslate / 2) document.getElementById('payer-jj').checked = true; 
+                else document.getElementById('payer-timmy').checked = true; 
+            }
+        });
+    }
+
+    // 🌟 底部導覽列滑動切換
+    const tabBar = document.querySelector('.bottom-tab-bar');
+    const tabIndicator = document.getElementById('tab-indicator');
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabsList = ['home', 'map', 'expense', 'exchange']; 
+
+    if (tabBar && tabIndicator) {
+        let isTabDragging = false; let tabStartX = 0; let initialIndicatorX = 0;
+        tabBar.addEventListener('touchstart', e => {
+            if (document.querySelector('.modal.open')) return;
+            isTabDragging = true; tabStartX = e.changedTouches[0].clientX;
+            const activeBtn = document.querySelector('.tab-btn.active');
+            initialIndicatorX = activeBtn ? activeBtn.offsetLeft : 0;
+            tabIndicator.style.transition = 'none';
+        }, { passive: true });
+        tabBar.addEventListener('touchmove', e => {
+            if (!isTabDragging) return;
+            let diff = e.changedTouches[0].clientX - tabStartX;
+            let newTranslate = Math.max(0, Math.min(tabBar.offsetWidth - tabIndicator.offsetWidth, initialIndicatorX + diff));
+            tabIndicator.style.transform = `translateX(${newTranslate}px)`;
+            if (Math.abs(diff) > 5 && e.cancelable) e.preventDefault();
+        }, { passive: false });
+        tabBar.addEventListener('touchend', e => {
+            if (!isTabDragging) return;
+            isTabDragging = false; let diff = e.changedTouches[0].clientX - tabStartX;
+            tabIndicator.style.transition = ''; 
+            if (Math.abs(diff) > 10) {
+                let indicatorCenter = initialIndicatorX + diff + (tabIndicator.offsetWidth / 2);
+                let closestTab = tabsList[0]; let minDistance = Infinity;
+                tabBtns.forEach((btn, index) => {
+                    let distance = Math.abs(indicatorCenter - (btn.offsetLeft + (btn.offsetWidth / 2)));
+                    if (distance < minDistance) { minDistance = distance; closestTab = tabsList[index]; }
+                });
+                switchTab(closestTab);
+            } else {
+                const activeBtn = document.querySelector('.tab-btn.active');
+                if (activeBtn) tabIndicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+            }
+        });
+    }
+
+    // 🌟 點擊空白處關閉 Modal
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(event) {
+            if (event.target === this) {
+                if (this.id === 'itineraryModal') closeModal();
+                else if (this.id === 'expenseModal') closeExpenseModal();
+                else if (this.id === 'photoDiaryModal') closePhotoDiaryModal();
+                else if (this.id === 'photoViewerModal') closePhotoViewer();
+            }
+        });
+    });
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+window.addEventListener('resize', () => {
+    const activeBtn = document.querySelector('.tab-btn.active');
+    if (activeBtn) {
+        const indicator = document.getElementById('tab-indicator');
+        if(indicator) {
+            indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
+            indicator.style.width = `${activeBtn.offsetWidth}px`;
+        }
+    }
+});
