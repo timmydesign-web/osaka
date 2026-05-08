@@ -127,13 +127,13 @@
         <div id="view-map" class="tab-view">
             <div class="ios-modal-header layout-width" style="margin-top: 15px; margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h2>行程足跡地圖</h2>
-                    <button id="add-marker-toggle" class="add-loc-trigger" onclick="toggleAddMarkerMode()">📍 新增地點: 關</button>
+                    <h2 style="margin: 0;">行程足跡地圖</h2>
+                    <button id="add-marker-toggle" class="add-loc-trigger" onclick="toggleAddMarkerMode()">📍 點擊新增</button>
                 </div>
             </div>
             <div class="layout-width" style="position: relative;">
                 <div id="tour-map"></div>
-                <div id="map-hint" class="map-hint-overlay" style="display: none;">請點擊地圖上的位置來新增標記</div>
+                <div id="map-hint" class="map-hint-overlay" style="display: none;">👉 請點選地圖上的精準位置</div>
             </div>
             <div class="layout-width" style="margin-top: 10px;">
                 <button class="glass-btn" style="background: rgba(255,59,48,0.1); color: #ff3b30; border: none;" onclick="clearCustomMarkers()">🗑️ 清除所有自訂標記</button>
@@ -277,14 +277,51 @@
 
     <input type="file" id="photo-upload-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)">
 
+    <!-- 🌟 地標編輯視窗 (Modal) -->
+    <div id="markerModal" class="modal" style="display: none;">
+        <div class="modal-content layout-width" style="max-width: 350px;">
+            <div class="close-btn" onclick="closeMarkerModal()">×</div>
+            <h2 style="margin-top: 0; font-size: 20px; margin-bottom: 20px;" id="markerModalTitle">📍 新增地點</h2>
+            
+            <div class="input-row">
+                <label style="font-size: 13px; color: #86868b; font-weight: 600; margin-bottom: 5px; display: block;">地點名稱</label>
+                <input type="text" id="marker-name" placeholder="例: 鳥貴族居酒屋" required>
+            </div>
+            
+            <div class="input-row">
+                <label style="font-size: 13px; color: #86868b; font-weight: 600; margin-bottom: 5px; display: block;">所屬天數</label>
+                <select id="marker-day" style="width: 100%; background: #f2f2f7; border: none; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 500; outline: none; margin-bottom: 12px; -webkit-appearance: none;">
+                    <option value="無">不指定</option>
+                    <option value="1">Day 1</option>
+                    <option value="2">Day 2</option>
+                    <option value="3">Day 3</option>
+                    <option value="4">Day 4</option>
+                    <option value="5">Day 5</option>
+                    <option value="6">Day 6</option>
+                    <option value="7">Day 7</option>
+                    <option value="8">Day 8</option>
+                </select>
+            </div>
+
+            <div class="input-row">
+                <label style="font-size: 13px; color: #86868b; font-weight: 600; margin-bottom: 5px; display: block;">Google Maps 連結 (選填)</label>
+                <input type="url" id="marker-url" placeholder="貼上 Google Maps 網址以便導航">
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="add-btn" onclick="saveMarker()" style="flex: 2;">儲存</button>
+                <button id="marker-delete-btn" onclick="deleteMarker()" style="flex: 1; background: #ff3b30; color: #fff; border: none; border-radius: 14px; font-weight: 700; display: none; cursor: pointer;">刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 行程彈出視窗 -->
     <div id="itineraryModal" class="modal" style="display: none;">
         <div class="modal-content layout-width">
             <div class="close-btn" onclick="closeModal()">×</div>
-            
             <div class="modal-slider-container">
                 <div id="modalBody"></div>
             </div>
-            
             <div class="modal-bottom-nav">
                 <button id="modal-prev-btn" class="modal-nav-btn" onclick="slideModalDay(-1)">← 前一天</button>
                 <button id="modal-next-btn" class="modal-nav-btn" onclick="slideModalDay(1)">下一天 →</button>
@@ -292,6 +329,7 @@
         </div>
     </div>
 
+    <!-- 旅程回憶錄視窗 -->
     <div id="photoDiaryModal" class="modal" style="display: none;">
         <div class="modal-content photo-diary-modal-content layout-width">
             <div class="close-btn" onclick="closePhotoDiaryModal()">×</div>
@@ -311,7 +349,7 @@
     </div>
 
     <!-- ================================== -->
-    <!-- 🚀 行程資料庫 -->
+    <!-- 🚀 行程資料庫 (完全展開版) -->
     <!-- ================================== -->
     <div id="data-source" style="display:none;">
         
@@ -323,34 +361,57 @@
                     <div class="item-content">
                         <span class="item-title">搭乘台灣虎航 IT212</span>
                         <span class="transit-detail">✈️ 準備起飛，前往關西機場</span>
+                        
                         <div class="flight-tracker-card" onclick="updateFlightStatus()">
                             <div class="flight-header">
                                 <span class="flight-no">✈️ 台灣虎航 IT212</span>
-                                <span class="flight-status">🔄 點擊查動態</span>
+                                <span class="flight-status" id="flight-status-badge">🔄 點擊查動態</span>
                             </div>
                             <div class="flight-route">
-                                <div class="route-point"><span class="r-code">TPE</span><span class="r-time">14:20</span><span class="r-term">T1</span></div>
-                                <div class="route-line"><span class="plane-icon">✈</span></div>
-                                <div class="route-point"><span class="r-code">KIX</span><span class="r-time">18:05</span><span class="r-term">T1</span></div>
+                                <div class="route-point">
+                                    <span class="r-code">TPE</span>
+                                    <span class="r-time">14:20</span>
+                                    <span class="r-term">T1</span>
+                                </div>
+                                <div class="route-line">
+                                    <span class="plane-icon">✈</span>
+                                </div>
+                                <div class="route-point">
+                                    <span class="r-code">KIX</span>
+                                    <span class="r-time">18:05</span>
+                                    <span class="r-term">T1</span>
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
                 <div class="time-item type-sight" data-time="18:05">
                     <span class="time">18:05</span>
-                    <div class="item-content"><span class="item-title">抵達關西機場 (KIX)</span><span class="transit-detail">🛄 入境與提領行李 (預估 1 小時)</span></div>
+                    <div class="item-content">
+                        <span class="item-title">抵達關西機場 (KIX)</span>
+                        <span class="transit-detail">🛄 入境與提領行李 (預估 1 小時)</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="19:35">
                     <span class="time">19:35</span>
-                    <div class="item-content"><span class="item-title">搭乘南海電鐵 Rapi:t</span><span class="transit-detail">🚆 南海特急 (關西機場 ➔ 南海難波) | 39 分鐘</span></div>
+                    <div class="item-content">
+                        <span class="item-title">搭乘南海電鐵 Rapi:t</span>
+                        <span class="transit-detail">🚆 南海特急 (關西機場 ➔ 南海難波) | 39 分鐘</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="20:14">
                     <span class="time">20:14</span>
-                    <div class="item-content"><span class="item-title">抵達「南海難波站」</span><span class="transit-detail">🚶 步行至飯店約 8 分鐘</span></div>
+                    <div class="item-content">
+                        <span class="item-title">抵達「南海難波站」</span>
+                        <span class="transit-detail">🚶 步行至飯店約 8 分鐘</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="20:30">
                     <span class="time">20:30</span>
-                    <div class="item-content"><span class="item-title">入住 艾思利德酒店難波東</span></div>
+                    <div class="item-content">
+                        <span class="item-title">入住 艾思利德酒店難波東</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -365,27 +426,45 @@
             <div class="itinerary-card">
                 <div class="time-item type-food" data-time="12:00">
                     <span class="time">12:00</span>
-                    <div class="item-content"><span class="item-title">午餐：大喜 (Taiki)</span><span class="transit-detail">🥢 享用道地美味料理，吃飽再出發</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：大喜 (Taiki)</span>
+                        <span class="transit-detail">🥢 享用道地美味料理，吃飽再出發</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="14:00">
                     <span class="time">14:00</span>
-                    <div class="item-content"><span class="item-title">寶山寺 (生駒聖天)</span><span class="transit-detail">🚗 開車上山，感受神祕莊嚴的建築氣息</span></div>
+                    <div class="item-content">
+                        <span class="item-title">寶山寺 (生駒聖天)</span>
+                        <span class="transit-detail">🚗 開車上山，感受神祕莊嚴的建築氣息</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="16:30">
                     <span class="time">16:30</span>
-                    <div class="item-content"><span class="item-title">信貴生駒 Skyline</span><span class="transit-detail">🚗 景觀公路巡禮，沿途展望台拍照</span></div>
+                    <div class="item-content">
+                        <span class="item-title">信貴生駒 Skyline</span>
+                        <span class="transit-detail">🚗 景觀公路巡禮，沿途展望台拍照</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="17:30">
                     <span class="time">17:30</span>
-                    <div class="item-content"><span class="item-title">生駒山上遊園地</span><span class="transit-detail">🎡 排隊玩「空中腳踏車」，賞金黃日落</span></div>
+                    <div class="item-content">
+                        <span class="item-title">生駒山上遊園地</span>
+                        <span class="transit-detail">🎡 排隊玩「空中腳踏車」，賞金黃日落</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="19:00">
                     <span class="time">19:00</span>
-                    <div class="item-content"><span class="item-title">下山夜景巡禮</span><span class="transit-detail">🌃 鐘の鳴る展望台，飽覽百萬雙面夜景</span></div>
+                    <div class="item-content">
+                        <span class="item-title">下山夜景巡禮</span>
+                        <span class="transit-detail">🌃 鐘の鳴る展望台，飽覽百萬雙面夜景</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="20:30">
                     <span class="time">20:30</span>
-                    <div class="item-content"><span class="item-title">返回大阪難波</span><span class="transit-detail">🚗 順利結束一日自駕行程</span></div>
+                    <div class="item-content">
+                        <span class="item-title">返回大阪難波</span>
+                        <span class="transit-detail">🚗 順利結束一日自駕行程</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -399,23 +478,38 @@
             <div class="itinerary-card">
                 <div class="time-item type-sight" data-time="10:00">
                     <span class="time">10:00</span>
-                    <div class="item-content"><span class="item-title">北野異人館</span><span class="transit-detail">🚶 散步參觀歐風異國情調建築</span></div>
+                    <div class="item-content">
+                        <span class="item-title">北野異人館</span>
+                        <span class="transit-detail">🚶 散步參觀歐風異國情調建築</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="12:30">
                     <span class="time">12:30</span>
-                    <div class="item-content"><span class="item-title">午餐：神戶牛鐵板燒</span><span class="transit-detail">🥩 享受頂級神戶牛的味蕾饗宴</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：神戶牛鐵板燒</span>
+                        <span class="transit-detail">🥩 享受頂級神戶牛的味蕾饗宴</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="15:00">
                     <span class="time">15:00</span>
-                    <div class="item-content"><span class="item-title">有馬溫泉</span><span class="transit-detail">♨️ 溫泉街老街散策、足湯體驗</span></div>
+                    <div class="item-content">
+                        <span class="item-title">有馬溫泉</span>
+                        <span class="transit-detail">♨️ 溫泉街老街散策、足湯體驗</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="19:00">
                     <span class="time">19:00</span>
-                    <div class="item-content"><span class="item-title">晚餐：大阪市區美食</span><span class="transit-detail">🚗 從神戶開車回大阪市區用餐</span></div>
+                    <div class="item-content">
+                        <span class="item-title">晚餐：大阪市區美食</span>
+                        <span class="transit-detail">🚗 從神戶開車回大阪市區用餐</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="21:00">
                     <span class="time">21:00</span>
-                    <div class="item-content"><span class="item-title">Dojimahama Tower</span><span class="transit-detail">🌃 欣賞新地標的都會水岸夜景</span></div>
+                    <div class="item-content">
+                        <span class="item-title">Dojimahama Tower</span>
+                        <span class="transit-detail">🌃 欣賞新地標的都會水岸夜景</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -429,23 +523,38 @@
             <div class="itinerary-card">
                 <div class="time-item type-sight" data-time="10:00">
                     <span class="time">10:00</span>
-                    <div class="item-content"><span class="item-title">梅田或心齋橋逛街</span><span class="transit-detail">🛍️ 悠閒採買藥妝、服飾與伴手禮</span></div>
+                    <div class="item-content">
+                        <span class="item-title">梅田或心齋橋逛街</span>
+                        <span class="transit-detail">🛍️ 悠閒採買藥妝、服飾與伴手禮</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="12:30">
                     <span class="time">12:30</span>
-                    <div class="item-content"><span class="item-title">午餐：Shabucho (涮涮鍋)</span><span class="transit-detail">🍲 享受道地暖胃的日式涮涮鍋</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：Shabucho (涮涮鍋)</span>
+                        <span class="transit-detail">🍲 享受道地暖胃的日式涮涮鍋</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="15:00">
                     <span class="time">15:00</span>
-                    <div class="item-content"><span class="item-title">繼續逛街：難波公園/美國村</span><span class="transit-detail">🚶 深入巷弄尋找特色好店</span></div>
+                    <div class="item-content">
+                        <span class="item-title">繼續逛街：難波公園/美國村</span>
+                        <span class="transit-detail">🚶 深入巷弄尋找特色好店</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="16:30">
                     <span class="time">16:30</span>
-                    <div class="item-content"><span class="item-title">點心：ゆめまる (章魚燒)</span><span class="transit-detail">🐙 來到大阪必吃的在地人氣小吃</span></div>
+                    <div class="item-content">
+                        <span class="item-title">點心：ゆめまる (章魚燒)</span>
+                        <span class="transit-detail">🐙 來到大阪必吃的在地人氣小吃</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="19:00">
                     <span class="time">19:00</span>
-                    <div class="item-content"><span class="item-title">晚餐：燒肉龍</span><span class="transit-detail">🥩 大口享受頂級黑毛和牛燒肉</span></div>
+                    <div class="item-content">
+                        <span class="item-title">晚餐：燒肉龍</span>
+                        <span class="transit-detail">🥩 大口享受頂級黑毛和牛燒肉</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -458,19 +567,31 @@
             <div class="itinerary-card">
                 <div class="time-item type-sight" data-time="10:00">
                     <span class="time">10:00</span>
-                    <div class="item-content"><span class="item-title">大阪城玩透透</span><span class="transit-detail">🏯 登天守閣、搭御座船、極樂橋拍倒影</span></div>
+                    <div class="item-content">
+                        <span class="item-title">大阪城玩透透</span>
+                        <span class="transit-detail">🏯 登天守閣、搭御座船、極樂橋拍倒影</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="13:00">
                     <span class="time">13:00</span>
-                    <div class="item-content"><span class="item-title">午餐：Onigiri Gorichan</span><span class="transit-detail">🍙 體驗超人氣的大爆餡手作飯糰</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：Onigiri Gorichan</span>
+                        <span class="transit-detail">🍙 體驗超人氣的大爆餡手作飯糰</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="17:00">
                     <span class="time">17:00</span>
-                    <div class="item-content"><span class="item-title">京瓷巨蛋觀賽</span><span class="transit-detail">⚾ 體驗熱血沸騰的棒球賽事</span></div>
+                    <div class="item-content">
+                        <span class="item-title">京瓷巨蛋觀賽</span>
+                        <span class="transit-detail">⚾ 體驗熱血沸騰的棒球賽事</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="21:30">
                     <span class="time">21:30</span>
-                    <div class="item-content"><span class="item-title">直奔京都飯店</span><span class="transit-detail">🚗 賽後開車前往京都，深夜路況順暢</span></div>
+                    <div class="item-content">
+                        <span class="item-title">直奔京都飯店</span>
+                        <span class="transit-detail">🚗 賽後開車前往京都，深夜路況順暢</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -485,41 +606,64 @@
                 
                 <div class="reservation-tracker-card" onclick="window.open('https://kichikichi.com/kichikichi-reservation/', '_blank')">
                     <div class="res-tracker-header">
-                        <span class="res-tag">預約提醒</span><span class="res-status-text" id="kichikichi-status">預約未開啟</span>
+                        <span class="res-tag">預約提醒</span>
+                        <span class="res-status-text" id="kichikichi-status">預約未開啟</span>
                     </div>
                     <div class="res-tracker-main">
-                        <span class="res-name">Kichi Kichi Omurice 🍳</span><span class="res-detail">預約時間：日本 13:00 - 14:00</span>
+                        <span class="res-name">Kichi Kichi Omurice 🍳</span>
+                        <span class="res-detail">預約時間：日本 13:00 - 14:00</span>
                     </div>
                     <div class="res-btn-mini">立即前往預約連結 →</div>
                 </div>
 
                 <div class="time-item type-sight" data-time="08:30">
                     <span class="time">08:30</span>
-                    <div class="item-content"><span class="item-title">京都車站出發</span><span class="transit-detail">🚗 駛上京都縱貫自動車道北上</span></div>
+                    <div class="item-content">
+                        <span class="item-title">京都車站出發</span>
+                        <span class="transit-detail">🚗 駛上京都縱貫自動車道北上</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="10:30">
                     <span class="time">10:30</span>
-                    <div class="item-content"><span class="item-title">伊根舟屋</span><span class="transit-detail">⛴️ 遊覽船餵海鷗，INE CAFE 賞海景</span></div>
+                    <div class="item-content">
+                        <span class="item-title">伊根舟屋</span>
+                        <span class="transit-detail">⛴️ 遊覽船餵海鷗，INE CAFE 賞海景</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="13:00">
                     <span class="time">13:00</span>
-                    <div class="item-content"><span class="item-title">午餐：伊根海鮮料理</span><span class="transit-detail">🐟 享用新鮮海味或海鮮丼</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：伊根海鮮料理</span>
+                        <span class="transit-detail">🐟 享用新鮮海味或海鮮丼</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="14:30">
                     <span class="time">14:30</span>
-                    <div class="item-content"><span class="item-title">天橋立 (飛龍觀)</span><span class="transit-detail">🚠 搭乘吊椅上山，體驗胯下望景</span></div>
+                    <div class="item-content">
+                        <span class="item-title">天橋立 (飛龍觀)</span>
+                        <span class="transit-detail">🚠 搭乘吊椅上山，體驗胯下望景</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="16:30">
                     <span class="time">16:30</span>
-                    <div class="item-content"><span class="item-title">智恩寺 & 旋轉橋</span><span class="transit-detail">🚶 參拜文殊堂，等待特色旋轉橋開啟</span></div>
+                    <div class="item-content">
+                        <span class="item-title">智恩寺 & 旋轉橋</span>
+                        <span class="transit-detail">🚶 參拜文殊堂，等待特色旋轉橋開啟</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="17:30">
                     <span class="time">17:30</span>
-                    <div class="item-content"><span class="item-title">啟程返回京都市區</span><span class="transit-detail">🚗 滿載美景，結束海之京都一日遊</span></div>
+                    <div class="item-content">
+                        <span class="item-title">啟程返回京都市區</span>
+                        <span class="transit-detail">🚗 滿載美景，結束海之京都一日遊</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="19:30">
                     <span class="time">19:30</span>
-                    <div class="item-content"><span class="item-title">晚餐：Kichi Kichi Omurice</span><span class="transit-detail">🍳 傳說中神級華麗的蛋包飯（記得提早預約）</span></div>
+                    <div class="item-content">
+                        <span class="item-title">晚餐：Kichi Kichi Omurice</span>
+                        <span class="transit-detail">🍳 傳說中神級華麗的蛋包飯（記得提早預約）</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -535,7 +679,8 @@
 
                 <div class="utility-tracker-card" onclick="window.open('https://www.hozugawakudari.jp/', '_blank')">
                     <div class="util-header">
-                        <span class="util-tag">出發前必看</span><span class="util-status-text">即時營運 / 水位狀態</span>
+                        <span class="util-tag">出發前必看</span>
+                        <span class="util-status-text">即時營運 / 水位狀態</span>
                     </div>
                     <div class="util-main">
                         <span class="util-name">保津川下り 乘船狀態 🛶</span>
@@ -546,27 +691,45 @@
 
                 <div class="time-item type-sight" data-time="09:00">
                     <span class="time">09:00</span>
-                    <div class="item-content"><span class="item-title">抵達龜岡乘船點</span><span class="transit-detail">🚗 辦理「汽車代駕接駁」送往嵐山</span></div>
+                    <div class="item-content">
+                        <span class="item-title">抵達龜岡乘船點</span>
+                        <span class="transit-detail">🚗 辦理「汽車代駕接駁」送往嵐山</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="10:00">
                     <span class="time">10:00</span>
-                    <div class="item-content"><span class="item-title">保津川下り (龜岡坐船)</span><span class="transit-detail">🛶 2 小時絕美溪谷與急流乘船體驗</span></div>
+                    <div class="item-content">
+                        <span class="item-title">保津川下り (龜岡坐船)</span>
+                        <span class="transit-detail">🛶 2 小時絕美溪谷與急流乘船體驗</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="13:00">
                     <span class="time">13:00</span>
-                    <div class="item-content"><span class="item-title">午餐：嵐山周邊</span><span class="transit-detail">🍲 推薦湯豆腐料理或道地蕎麥麵</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：嵐山周邊</span>
+                        <span class="transit-detail">🍲 推薦湯豆腐料理或道地蕎麥麵</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="14:00">
                     <span class="time">14:00</span>
-                    <div class="item-content"><span class="item-title">嵐山散策</span><span class="transit-detail">🎋 竹林小徑、野宮神社、渡月橋</span></div>
+                    <div class="item-content">
+                        <span class="item-title">嵐山散策</span>
+                        <span class="transit-detail">🎋 竹林小徑、野宮神社、渡月橋</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="16:30">
                     <span class="time">16:30</span>
-                    <div class="item-content"><span class="item-title">伏見稻荷大社</span><span class="transit-detail">⛩️ 取車後開車前往，拍絕美千本鳥居</span></div>
+                    <div class="item-content">
+                        <span class="item-title">伏見稻荷大社</span>
+                        <span class="transit-detail">⛩️ 取車後開車前往，拍絕美千本鳥居</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="19:00">
                     <span class="time">19:00</span>
-                    <div class="item-content"><span class="item-title">晚餐：市區美食 (待定)</span><span class="transit-detail">🥢 前往鴨川周邊或先斗町尋找特色晚餐</span></div>
+                    <div class="item-content">
+                        <span class="item-title">晚餐：市區美食 (待定)</span>
+                        <span class="transit-detail">🥢 前往鴨川周邊或先斗町尋找特色晚餐</span>
+                    </div>
                 </div>
             </div>
             <div class="transport-section">
@@ -580,40 +743,67 @@
             <div class="itinerary-card">
                 <div class="time-item type-sight" data-time="11:00">
                     <span class="time">11:00</span>
-                    <div class="item-content"><span class="item-title">悠閒退房與啟程</span><span class="transit-detail">🏨 睡到自然醒！把行李全數搬上車，從京都自駕出發準備南下</span></div>
+                    <div class="item-content">
+                        <span class="item-title">悠閒退房與啟程</span>
+                        <span class="transit-detail">🏨 睡到自然醒！把行李全數搬上車，從京都自駕出發準備南下</span>
+                    </div>
                 </div>
                 <div class="time-item type-food" data-time="12:30">
                     <span class="time">12:30</span>
-                    <div class="item-content"><span class="item-title">午餐：私房指定餐廳</span><span class="transit-detail">🍽️ 抵達您安排的美味餐廳，不趕時間，悠哉享受美好的午餐時光</span></div>
+                    <div class="item-content">
+                        <span class="item-title">午餐：私房指定餐廳</span>
+                        <span class="transit-detail">🍽️ 抵達您安排的美味餐廳，不趕時間，悠哉享受美好的午餐時光</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="14:00">
                     <span class="time">14:00</span>
-                    <div class="item-content"><span class="item-title">關西機場還車</span><span class="transit-detail">🚗 吃飽後直接把車開到關西機場 (KIX) 的租車中心，完成還車手續</span></div>
+                    <div class="item-content">
+                        <span class="item-title">關西機場還車</span>
+                        <span class="transit-detail">🚗 吃飽後直接把車開到關西機場 (KIX) 的租車中心，完成還車手續</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="15:00">
                     <span class="time">15:00</span>
-                    <div class="item-content"><span class="item-title">臨空城快閃 (彈性行程)</span><span class="transit-detail">🛍️ 將行李寄放在機場，若時間充裕，可搭乘一站電車到臨空城逛逛</span></div>
+                    <div class="item-content">
+                        <span class="item-title">臨空城快閃 (彈性行程)</span>
+                        <span class="transit-detail">🛍️ 將行李寄放在機場，若時間充裕，可搭乘一站電車到臨空城逛逛</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="16:30">
                     <span class="time">16:30</span>
-                    <div class="item-content"><span class="item-title">辦理報到與托運</span><span class="transit-detail">🛄 回到 T1 航廈準備報到，剩下的時間可以進管制區大採購免稅伴手禮</span></div>
+                    <div class="item-content">
+                        <span class="item-title">辦理報到與托運</span>
+                        <span class="transit-detail">🛄 回到 T1 航廈準備報到，剩下的時間可以進管制區大採購免稅伴手禮</span>
+                    </div>
                 </div>
                 <div class="time-item type-sight" data-time="19:05">
                     <span class="time">19:05</span>
                     <div class="item-content">
                         <span class="item-title">搭機返回台灣</span>
                         <span class="transit-detail">✈️ 搭乘中華航空 CI0173，帶著滿滿回憶回台面對現實</span>
+                        
                         <div class="flight-tracker-card" onclick="updateFlightStatus()">
                             <div class="flight-header">
                                 <span class="flight-no">✈️ 中華航空 CI0173</span>
-                                <span class="flight-status">🔄 點擊查動態</span>
+                                <span class="flight-status" id="flight-status-badge">🔄 點擊查動態</span>
                             </div>
                             <div class="flight-route">
-                                <div class="route-point"><span class="r-code">KIX</span><span class="r-time">19:05</span><span class="r-term">T1</span></div>
-                                <div class="route-line"><span class="plane-icon">✈</span></div>
-                                <div class="route-point"><span class="r-code">TPE</span><span class="r-time">21:10</span><span class="r-term">T1</span></div>
+                                <div class="route-point">
+                                    <span class="r-code">KIX</span>
+                                    <span class="r-time">19:05</span>
+                                    <span class="r-term">T1</span>
+                                </div>
+                                <div class="route-line">
+                                    <span class="plane-icon">✈</span>
+                                </div>
+                                <div class="route-point">
+                                    <span class="r-code">TPE</span>
+                                    <span class="r-time">21:10</span>
+                                    <span class="r-term">T1</span>
+                                </div>
                             </div>
                         </div>
+
                     </div>
                 </div>
             </div>
