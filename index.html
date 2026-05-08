@@ -12,6 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="關西行">
     <meta name="theme-color" content="#ff9a9e">
 
+    <!-- 🌍 載入 Leaflet 地圖套件 -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
@@ -36,6 +37,9 @@
     </div>
 
     <main>
+        <!-- ================================== -->
+        <!-- 🏠 分頁 1：首頁 (Home) -->
+        <!-- ================================== -->
         <div id="view-home" class="tab-view active">
             
             <div id="day-nav-wrapper" class="sticky-nav-wrapper">
@@ -117,15 +121,29 @@
             </section>
         </div>
 
+        <!-- ================================== -->
+        <!-- 🌍 分頁 2：總覽地圖 (新增) -->
+        <!-- ================================== -->
         <div id="view-map" class="tab-view">
             <div class="ios-modal-header layout-width" style="margin-top: 15px; margin-bottom: 10px;">
-                <h2>行程足跡地圖</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>行程足跡地圖</h2>
+                    <!-- 🌟 開關：啟動點擊新增模式 -->
+                    <button id="add-marker-toggle" class="add-loc-trigger" onclick="toggleAddMarkerMode()">📍 新增地點: 關</button>
+                </div>
             </div>
-            <div class="layout-width">
+            <div class="layout-width" style="position: relative;">
                 <div id="tour-map"></div>
+                <div id="map-hint" class="map-hint-overlay" style="display: none;">請點擊地圖上的位置來新增標記</div>
+            </div>
+            <div class="layout-width" style="margin-top: 10px;">
+                <button class="glass-btn" style="background: rgba(255,59,48,0.1); color: #ff3b30; border: none;" onclick="clearCustomMarkers()">🗑️ 清除所有自訂標記</button>
             </div>
         </div>
 
+        <!-- ================================== -->
+        <!-- 💰 分頁 3：記帳本 (Expense) -->
+        <!-- ================================== -->
         <div id="view-expense" class="tab-view">
             <div class="ios-modal-header layout-width" style="margin-top: 15px; margin-bottom: 20px;">
                 <h2>雙人記帳本</h2>
@@ -175,6 +193,9 @@
             </div>
         </div>
 
+        <!-- ================================== -->
+        <!-- 💱 分頁 4：匯率 (Exchange) -->
+        <!-- ================================== -->
         <div id="view-exchange" class="tab-view">
             <div class="ios-modal-header layout-width" style="margin-top: 15px; margin-bottom: 20px;">
                 <h2>匯率與刷卡試算</h2>
@@ -290,6 +311,9 @@
         </div>
     </div>
 
+    <!-- ================================== -->
+    <!-- 🚀 行程資料庫 -->
+    <!-- ================================== -->
     <div id="data-source" style="display:none;">
         <div id="content-day1">
             <div class="ios-modal-header"><h2>Day 1: 台北 ✈️ 大阪</h2></div>
