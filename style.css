@@ -213,7 +213,7 @@ header h1 { margin: 0; font-size: 24px; }
 /* 修改這段即可：讓關閉按鈕變成懸浮吸頂 */
 .close-btn { 
     position: sticky;         /* 從 absolute 改為 sticky 吸附 */
-    top: 15px;                /* 滾動時停留在距離頂部 15px 的位置 */
+    top: 5px;                /* 滾動時停留在距離頂部 15px 的位置 */
     margin-left: auto;        /* 利用 auto 將按鈕推到最右側 */
     margin-top: -20px;        /* 抵銷外層 modal-content 的 padding-top */
     margin-right: -5px;       /* 向右微調，與原本的 absolute 視覺位置對齊 */
