@@ -210,8 +210,33 @@ header h1 { margin: 0; font-size: 24px; }
 }
 .modal.open .modal-content { transform: scale(1); opacity: 1; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s; }
 
-.close-btn { position: absolute; right: 15px; top: 15px; width: 34px; height: 34px; background: #ffffff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 400; line-height: 1; padding-bottom: 2px; cursor: pointer; color: #86868b; z-index: 9999; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-.close-btn:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2); }
+/* 修改這段即可：讓關閉按鈕變成懸浮吸頂 */
+.close-btn { 
+    position: sticky;         /* 從 absolute 改為 sticky 吸附 */
+    top: 15px;                /* 滾動時停留在距離頂部 15px 的位置 */
+    margin-left: auto;        /* 利用 auto 將按鈕推到最右側 */
+    margin-top: -20px;        /* 抵銷外層 modal-content 的 padding-top */
+    margin-right: -5px;       /* 向右微調，與原本的 absolute 視覺位置對齊 */
+    margin-bottom: 15px;      /* 與下方行程標題保持空間 */
+    
+    /* 以下保留原有的外觀與陰影設定 */
+    width: 34px; 
+    height: 34px; 
+    background: #ffffff; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 22px; 
+    cursor: pointer; 
+    color: #86868b; 
+    z-index: 9999; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); 
+    transition: 0.2s; 
+}
+.close-btn:hover { 
+    transform: scale(1.05); 
+}
 
 /* 視窗內滑動切換 */
 .modal-slider-container { overflow: hidden; width: 100%; padding-top: 5px; }
