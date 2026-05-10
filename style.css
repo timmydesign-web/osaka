@@ -504,3 +504,19 @@ header h1 { margin: 0; font-size: 24px; }
 [data-theme="dark"] .utility-tracker-card { background: #0a192f; border-color: #0a84ff; }
 [data-theme="dark"] .util-name { color: #fff; }
 [data-theme="dark"] .util-btn-mini, [data-theme="dark"] .util-status-text { color: #0a84ff; }
+
+/* =========================================
+   修正彈出視窗上方留白，使上方與左右邊距一致
+========================================= */
+.modal-content {
+    padding-top: 20px !important; /* 將原本的 35px 縮減為與左右一致的 20px */
+}
+
+.ios-modal-header h2 {
+    margin-top: 0 !important;     /* 強制消除 h2 標題預設的上方空白 */
+}
+
+/* 同步微調 X 按鈕的位置，避免因為上方空間縮減而太貼頂部 */
+.close-btn { 
+    margin-top: -5px !important;  /* 從上一版的 -20px 改為 -5px */
+}
