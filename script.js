@@ -1,14 +1,8 @@
 let currentActiveButton = null;
 let currentOpenDayNum = 1; 
-let tourMap = null;
-let customLayerGroup = null;
-let isAddMarkerMode = false;
-let editingMarkerId = null;
-let tempLatLng = null;
-let customMarkers = JSON.parse(localStorage.getItem('customMarkers')) || [];
 
 // =========================================
-// 🌙 深色模式與分頁切換
+// 🌙 深色模式邏輯
 // =========================================
 function toggleTheme() {
     const html = document.documentElement;
@@ -39,14 +33,7 @@ function switchTab(tabId) {
         indicator.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
         indicator.style.width = `${activeBtn.offsetWidth}px`;
     }
-
-    if (tabId === 'map') {
-        setTimeout(() => { 
-            if (tourMap) {
-                tourMap.invalidateSize(); 
-            }
-        }, 200);
-    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -65,215 +52,7 @@ function setModalOrigin(event) {
 }
 
 // =========================================
-// 🌍 智慧地圖系統 (編輯、刪除與自動 Emoji)
-// =========================================
-function autoEmoji(name) {
-    const rules = [
-        { key: ["肉", "牛", "燒", "排"], icon: "🥩" },
-        { key: ["麵", "拉麵", "烏龍"], icon: "🍜" },
-        { key: ["壽司", "魚", "刺身", "海鮮"], icon: "🍣" },
-        { key: ["酒", "居酒屋", "吧"], icon: "🍺" },
-        { key: ["咖啡", "甜", "奶茶", "冰", "蛋糕"], icon: "🍰" },
-        { key: ["買", "逛", "商店", "百貨", "藥", "outlet", "OUTLET"], icon: "🛍️" },
-        { key: ["站", "鐵", "捷運"], icon: "🚆" },
-        { key: ["寺", "社", "神"], icon: "⛩️" },
-        { key: ["景", "美", "拍"], icon: "📸" }
-    ];
-    for (let rule of rules) {
-        if (rule.key.some(k => name.includes(k))) return rule.icon;
-    }
-    return "📍";
-}
-
-function initMap() {
-    if (tourMap) return;
-    tourMap = L.map('tour-map').setView([34.7, 135.5], 10);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(tourMap);
-    
-    customLayerGroup = L.layerGroup().addTo(tourMap);
-
-    // 固定行程地點
-    const fixedLocs = [
-        { name: "艾思利德飯店", lat: 34.6601, lng: 135.5036, icon: "🏨" },
-        { name: "大喜 (Taiki)", lat: 34.6675, lng: 135.5020, icon: "🥢" },
-        { name: "生駒山上遊園地", lat: 34.6800, lng: 135.6800, icon: "🎡" },
-        { name: "有馬溫泉", lat: 34.7975, lng: 135.2475, icon: "♨️" },
-        { name: "大阪城", lat: 34.6873, lng: 135.5262, icon: "🏯" },
-        { name: "京瓷巨蛋", lat: 34.6693, lng: 135.4761, icon: "⚾" },
-        { name: "Kichi Kichi", lat: 35.0064, lng: 135.7706, icon: "🍳" },
-        { name: "伊根舟屋", lat: 35.6738, lng: 135.2816, icon: "⛴️" },
-        { name: "天橋立", lat: 35.5683, lng: 135.1916, icon: "🚠" },
-        { name: "保津川乘船場", lat: 35.0163, lng: 135.5762, icon: "🛶" },
-        { name: "伏見稻荷大社", lat: 34.9671, lng: 135.7726, icon: "⛩️" },
-        { name: "臨空城 Outlets", lat: 34.4115, lng: 135.2945, icon: "🛍️" },
-        { name: "關西機場 (KIX)", lat: 34.4320, lng: 135.2304, icon: "✈️" }
-    ];
-    
-    fixedLocs.forEach(loc => {
-        const html = `<div style="font-size: 20px; background: white; border-radius: 50%; width: 34px; height: 34px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid #0071e3;">${loc.icon}</div>`;
-        L.marker([loc.lat, loc.lng], { icon: L.divIcon({ className: 'custom-map-marker', html, iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -34] }) })
-         .addTo(tourMap)
-         .bindPopup(`<b style="font-size: 13px;">${loc.name}</b>`);
-    });
-
-    renderCustomMarkers();
-
-    // 點擊地圖觸發新增
-    tourMap.on('click', function(e) {
-        if (!isAddMarkerMode) return;
-        tempLatLng = e.latlng;
-        openMarkerModal('add');
-    });
-}
-
-function renderCustomMarkers() {
-    if(!customLayerGroup) return;
-    customLayerGroup.clearLayers();
-    
-    customMarkers.forEach(loc => {
-        const dayTag = loc.day && loc.day !== "無" ? `[Day ${loc.day}] ` : "";
-        const linkHtml = loc.url ? `<br><a href="${loc.url}" target="_blank" style="display:inline-block; margin-top:8px; padding:6px 12px; background:var(--ios-blue); color:#fff; border-radius:8px; text-decoration:none; font-size:12px; font-weight:bold;">📍 開啟導航</a>` : "";
-        const html = `<div style="font-size: 20px; background: white; border-radius: 50%; width: 34px; height: 34px; display: flex; justify-content: center; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 2px solid #ff3b30;">${loc.icon}</div>`;
-        
-        const popupContent = `
-            <div style="text-align: center; min-width: 120px;">
-                <b style="font-size: 14px;">${dayTag}${loc.name}</b>
-                ${linkHtml}
-                <div style="margin-top:8px; border-top: 1px solid #eee; padding-top: 8px;">
-                    <button onclick="openEditMarker(${loc.id})" style="padding:6px 10px; background:#e5e5ea; border:none; border-radius:8px; font-size:12px; cursor:pointer; font-weight:700; color:#1d1d1f; width: 100%;">✏️ 編輯 / 刪除</button>
-                </div>
-            </div>
-        `;
-
-        L.marker([loc.lat, loc.lng], { icon: L.divIcon({ className: 'custom-map-marker', html, iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -34] }) })
-         .addTo(customLayerGroup)
-         .bindPopup(popupContent);
-    });
-}
-
-function toggleAddMarkerMode() {
-    isAddMarkerMode = !isAddMarkerMode;
-    const btn = document.getElementById('add-marker-toggle');
-    const hint = document.getElementById('map-hint');
-    if (isAddMarkerMode) {
-        btn.innerText = "取消新增";
-        btn.classList.add('active');
-        hint.style.display = 'block';
-    } else {
-        btn.innerText = "📍 點擊新增";
-        btn.classList.remove('active');
-        hint.style.display = 'none';
-    }
-}
-
-// =========================================
-// ✏️ 地標編輯彈出視窗 (Modal)
-// =========================================
-window.openEditMarker = function(id) {
-    openMarkerModal('edit', id);
-};
-
-function openMarkerModal(mode, id = null) {
-    const modal = document.getElementById('markerModal');
-    const title = document.getElementById('markerModalTitle');
-    const delBtn = document.getElementById('marker-delete-btn');
-    
-    if (mode === 'add') {
-        editingMarkerId = null;
-        title.innerText = "📍 新增地點";
-        document.getElementById('marker-name').value = '';
-        document.getElementById('marker-day').value = '無';
-        document.getElementById('marker-url').value = '';
-        delBtn.style.display = 'none';
-    } else if (mode === 'edit') {
-        editingMarkerId = id;
-        const loc = customMarkers.find(m => m.id === id);
-        if(!loc) return;
-        title.innerText = "✏️ 編輯地點";
-        document.getElementById('marker-name').value = loc.name;
-        document.getElementById('marker-day').value = loc.day || '無';
-        document.getElementById('marker-url').value = loc.url || '';
-        delBtn.style.display = 'block';
-        if(tourMap) {
-            tourMap.closePopup();
-        }
-    }
-    
-    modal.style.display = 'flex';
-    setTimeout(() => {
-        modal.classList.add('open');
-    }, 10);
-    document.body.style.overflow = 'hidden';
-    
-    if (isAddMarkerMode) {
-        toggleAddMarkerMode();
-    }
-}
-
-function closeMarkerModal() {
-    const modal = document.getElementById('markerModal');
-    modal.classList.remove('open');
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 300);
-    document.body.style.overflow = '';
-}
-
-function saveMarker() {
-    const name = document.getElementById('marker-name').value.trim();
-    const day = document.getElementById('marker-day').value;
-    const url = document.getElementById('marker-url').value.trim();
-    
-    if(!name) { 
-        alert("請輸入地點名稱！"); 
-        return; 
-    }
-    
-    if (editingMarkerId) {
-        const idx = customMarkers.findIndex(m => m.id === editingMarkerId);
-        if(idx !== -1) {
-            customMarkers[idx].name = name;
-            customMarkers[idx].day = day;
-            customMarkers[idx].url = url;
-            customMarkers[idx].icon = autoEmoji(name); 
-        }
-    } else {
-        const newLoc = { 
-            id: Date.now(), 
-            name: name, 
-            lat: tempLatLng.lat, 
-            lng: tempLatLng.lng, 
-            icon: autoEmoji(name), 
-            day: day, 
-            url: url 
-        };
-        customMarkers.push(newLoc);
-    }
-    
-    localStorage.setItem('customMarkers', JSON.stringify(customMarkers));
-    renderCustomMarkers();
-    closeMarkerModal();
-}
-
-function deleteMarker() {
-    if (!editingMarkerId) return;
-    if (confirm("確定要刪除這個地點嗎？")) {
-        customMarkers = customMarkers.filter(m => m.id !== editingMarkerId);
-        localStorage.setItem('customMarkers', JSON.stringify(customMarkers));
-        renderCustomMarkers();
-        closeMarkerModal();
-    }
-}
-
-function clearCustomMarkers() {
-    if (confirm("確定要清除所有手動新增的地點嗎？")) {
-        localStorage.removeItem('customMarkers');
-        location.reload();
-    }
-}
-
-// =========================================
-// 🍳 預約提醒與 ✈️ 航班動態
+// 🍳 Kichi Kichi 預約雷達系統
 // =========================================
 function checkReservationReminder() {
     const now = new Date();
@@ -285,6 +64,7 @@ function checkReservationReminder() {
     const jstMin = jstNow.getMinutes();
 
     const isTargetDay = (jstYear === 2026 && jstMonth === 8 && jstDate === 15);
+    
     const banner = document.getElementById('reservation-alert-banner');
     const modalStatus = document.querySelector('#modalBody #kichikichi-status');
 
@@ -307,6 +87,9 @@ function checkReservationReminder() {
     }
 }
 
+// =========================================
+// ✈️ 航班即時動態追蹤
+// =========================================
 function updateFlightStatus() {
     const badge = document.querySelector('#modalBody .flight-tracker-card .flight-status');
     if(!badge) return;
@@ -317,6 +100,7 @@ function updateFlightStatus() {
     setTimeout(() => {
         const isOnTime = Math.random() > 0.15; 
         const dest = currentOpenDayNum === 8 ? "TPE T1" : "KIX T1";
+
         if (isOnTime) {
             badge.innerText = `✅ 準點 (抵達 ${dest})`;
             badge.className = "flight-status on-time";
@@ -734,11 +518,13 @@ let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
 function openExpenseModal(event) { 
     currentActiveButton = event.currentTarget; 
     const modal = document.getElementById('expenseModal'); 
-    modal.style.display = 'flex'; 
-    setModalOrigin(event); 
-    void modal.offsetWidth; 
-    modal.classList.add('open'); 
-    document.body.style.overflow = 'hidden'; 
+    if(modal) {
+        modal.style.display = 'flex'; 
+        setModalOrigin(event); 
+        void modal.offsetWidth; 
+        modal.classList.add('open'); 
+        document.body.style.overflow = 'hidden'; 
+    }
     renderExpenses(expenses.length === 0); 
     syncFromCloud(); 
 }
@@ -964,7 +750,6 @@ function init() {
         }, () => fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)")); 
     } else { fetchWeather(34.666, 135.500, "大阪市 中央區 (預設)"); }
 
-    initMap(); 
     syncFromCloud();
     renderExpenses(expenses.length === 0);
     updateItineraryPreview();
@@ -1027,7 +812,7 @@ function init() {
     const tabBar = document.querySelector('.bottom-tab-bar');
     const tabIndicator = document.getElementById('tab-indicator');
     const tabBtns = document.querySelectorAll('.tab-btn');
-    const tabsList = ['home', 'map', 'expense', 'exchange']; 
+    const tabsList = ['home', 'expense', 'exchange']; 
 
     if (tabBar && tabIndicator) {
         let isTabDragging = false; let tabStartX = 0; let initialIndicatorX = 0;
@@ -1072,7 +857,6 @@ function init() {
                 else if (this.id === 'expenseModal') closeExpenseModal();
                 else if (this.id === 'photoDiaryModal') closePhotoDiaryModal();
                 else if (this.id === 'photoViewerModal') closePhotoViewer();
-                else if (this.id === 'markerModal') closeMarkerModal();
             }
         });
     });
